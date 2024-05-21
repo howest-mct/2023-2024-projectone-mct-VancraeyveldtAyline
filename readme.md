@@ -1,9 +1,9 @@
-# Titel van project
+# ShelfTracker
 
-**VOORNAAM NAAM:** A B
+**VOORNAAM NAAM:** Ayline Vancraeyveldt
 
-**Sparringpartner:** C D
+**Sparringpartner:** Riet De Meulemeester
 
-**Projectsamenvatting in max 10 woorden:** E
+**Projectsamenvatting in max 10 woorden:** Smart Inventory Management System
 
-**Projecttitel:** F
+**Projecttitel:** ShelfTracker
