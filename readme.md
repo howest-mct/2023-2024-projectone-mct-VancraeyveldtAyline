@@ -7,3 +7,5 @@
 **Projectsamenvatting in max 10 woorden:** Smart Inventory Management System
 
 **Projecttitel:** ShelfTracker
+
+<!-- d -->
