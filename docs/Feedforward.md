@@ -1,12 +1,12 @@
 # Projectgegevens
 
-**VOORNAAM NAAM:** A B
+**VOORNAAM NAAM:** Ayline Vancraeyveldt
 
-**Sparringpartner:** C D
+**Sparringpartner:** Riet De Meulemeester
 
-**Projectsamenvatting in max 10 woorden:** E
+**Projectsamenvatting in max 10 woorden:** Smart Inventory Management System
 
-**Projecttitel:** F
+**Projecttitel:** ShelfTracker
 
 # Tips voor feedbackgesprekken
 
@@ -32,7 +32,7 @@
 
 # Feedforward gesprekken
 
-## Gesprek 1 (Datum: xx/xx/2024)
+## Gesprek 1 (Datum: xx/xx/2023)
 
 Lector:
 
@@ -44,7 +44,7 @@ Dit is de feedback op mijn vragen.
 
 - feedback 1: G
 
-## Gesprek 2 (Datum: xx/xx/2024)
+## Gesprek 2 (Datum: xx/xx/2023)
 
 Lector:
 
@@ -56,7 +56,7 @@ Dit is de feedback op mijn vragen.
 
 - feedback 1: G
 
-## Gesprek 3 (Datum: xx/xx/2024)
+## Gesprek 3 (Datum: xx/xx/2023)
 
 Lector:
 
@@ -67,3 +67,29 @@ Vragen voor dit gesprek:
 Dit is de feedback op mijn vragen.
 
 - feedback 1: G
+
+# Consult gesprekken
+
+## Gesprek 1 (Datum: 23/05/2024)
+
+Lector: Pieter-Jan
+
+Vragen voor dit gesprek:
+
+- vraag 1: Is mijn lichtsensor correct aangesloten?
+
+- vraag 2: Moeten de IN en OUT pinnen van de Neopixel Ring aan de GPIO pinnen van de Raspberry Pi hangen?
+
+- vraag 3: Ik kan de barcode scanner online niet vinden in fzpz formaat, hoe moet ik dit oplossen?
+
+- vraag 4: De barcode scanner gebruikt een knop om te scannen, maar ik wil dat hij altijd aan staat, hoe kan dit?
+
+Dit is de feedback op mijn vragen.
+
+- feedback 1: Het is correct aangesloten, maar aangezien ik al een MCP3008 gebruik is het handig als ik de lichtsensor daar aanhang.
+
+- feedback 2: De OUT pin wordt gebruikt om andere Neopixel Ringen aan te sluiten, het hangt niet aan de Raspberry Pi. (De Neopixel ring moet aangesloten worden aan de 5V i.p.v. de 3.3V)
+
+- feedback 3: Ik kan een GPS Receiver gebruiken (niet alle pinnen gebruiken) en in commentaar bij plaatsen dat het de barcode scanner voorstelt.
+
+- feedback 4: Ik kan de knop overbruggen zodanig dat het altijd aan staat.
