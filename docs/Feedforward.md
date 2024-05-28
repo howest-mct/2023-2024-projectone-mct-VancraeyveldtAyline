@@ -32,7 +32,7 @@
 
 # Feedforward gesprekken
 
-## Gesprek 1 (Datum: xx/xx/2023)
+## Gesprek 1 (Datum: 28/05/2024)
 
 Lector:
 
@@ -44,7 +44,7 @@ Dit is de feedback op mijn vragen.
 
 - feedback 1: G
 
-## Gesprek 2 (Datum: xx/xx/2023)
+## Gesprek 2 (Datum: xx/xx/2024)
 
 Lector:
 
@@ -56,13 +56,13 @@ Dit is de feedback op mijn vragen.
 
 - feedback 1: G
 
-## Gesprek 3 (Datum: xx/xx/2023)
+## Gesprek 3 (Datum: xx/xx/2024)
 
 Lector:
 
 Vragen voor dit gesprek:
 
-- [x] vraag 1: V
+- vraag 1: V
 
 Dit is de feedback op mijn vragen.
 
@@ -70,7 +70,7 @@ Dit is de feedback op mijn vragen.
 
 # Consult gesprekken
 
-## Gesprek 1 (Datum: 23/05/2024)
+## Consult 1 (Datum: 23/05/2024)
 
 Lector: Pieter-Jan
 
@@ -93,3 +93,15 @@ Dit is de feedback op mijn vragen.
 - feedback 3: Ik kan een GPS Receiver gebruiken (niet alle pinnen gebruiken) en in commentaar bij plaatsen dat het de barcode scanner voorstelt.
 
 - feedback 4: Ik kan de knop overbruggen zodanig dat het altijd aan staat.
+
+## Consult 2 (Datum: 24/05/2024)
+
+Lector: Stijn
+
+Vragen voor dit gesprek:
+
+- vraag 1: Is mijn database structuur logisch?
+
+Dit is de feedback op mijn vragen.
+
+- feedback 1: Voorkeuren per gebruiker bijhouden, Registratiemoment toevoegen, Data scheiden, historiek bij houden van wat er in en uit de kast is gegaan.
