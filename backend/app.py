@@ -1,11 +1,13 @@
 import threading
-import time
 from repositories.DataRepository import DataRepository
 from flask import Flask, jsonify
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
+import time
 from RPi import GPIO
-# TODO: GPIO
+from subprocess import check_output
+from lcd import LCD_Display
+from mcp3008 import MCP3008
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'HELLOTHISISSCERET'
@@ -15,73 +17,132 @@ socketio = SocketIO(app, cors_allowed_origins="*",
                     async_mode='gevent', ping_interval=0.5)
 CORS(app)
 
-
-# START een thread op. Belangrijk!!! Debugging moet UIT staan op start van de server, anders start de thread dubbel op
-# werk enkel met de packages gevent en gevent-websocket.
-def all_out():
-    # wait 10s with sleep sintead of threading.Timer, so we can use daemon
-    time.sleep(10)
-    while True:
-        print('*** We zetten alles uit **')
-        DataRepository.update_status_alle_lampen(0)
-        status = DataRepository.read_status_lampen()
-        socketio.emit('B2F_alles_uit', {
-                    'status': "lampen uit"})
-        socketio.emit('B2F_status_lampen', {'lampen': status})
-        # save our last run time
-        last_time_alles_uit = now
-        time.sleep(30)
-
-
-def start_thread():
-    # threading.Timer(10, all_out).start()
-    t = threading.Thread(target=all_out, daemon=True)
-    t.start()
-    print("thread started")
-
-
 # API ENDPOINTS
 @app.route('/')
 def hallo():
     return "Server is running, er zijn momenteel geen API endpoints beschikbaar."
 
-
 # SOCKET IO
 @socketio.on('connect')
 def initial_connection():
     print('A new client connect')
-    # # Send to the client!
-    # vraag de status op van de lampen uit de DB
-    status = DataRepository.read_status_lampen()
-    # socketio.emit('B2F_status_lampen', {'lampen': status})
-    # Beter is het om enkel naar de client te sturen die de verbinding heeft gemaakt.
-    emit('B2F_status_lampen', {'lampen': status}, broadcast=False)
-
 
 @socketio.on('F2B_switch_light')
 def switch_light(data):
     print('licht gaat aan/uit', data)
-    lamp_id = data['lamp_id']
-    new_status = data['new_status']
-    # spreek de hardware aan
-    # stel de status in op de DB
-    res = DataRepository.update_status_lamp(lamp_id, new_status)
-    print(res)
-    # vraag de (nieuwe) status op van de lamp
-    data = DataRepository.read_status_lamp_by_id(lamp_id)
-    socketio.emit('B2F_verandering_lamp',  {'lamp': data})
-    # Indien het om de lamp van de TV kamer gaat, dan moeten we ook de hardware aansturen.
-    if lamp_id == '3':
-        print(f"TV kamer moet switchen naar {new_status} !")
-        # Do something
 
 
-if __name__ == '__main__':
-    try:
-        start_thread()
-        print("**** Starting APP ****")
-        socketio.run(app, debug=False, host='0.0.0.0')
-    except KeyboardInterrupt:
-        print('KeyboardInterrupt exception is caught')
-    finally:
-        print("finished")
+
+# Constant values
+BUZZER_PIN = 22
+BUTTON_JOY_PIN = 6
+LCD_RS_PIN = 21
+LCD_E_PIN = 20
+LCD_DATA_PINS = [16, 12, 25, 24, 23, 26, 19, 13]
+JOYSTICK_CHANNEL_X = 0
+JOYSTICK_CHANNEL_Y = 1
+LIGHT_CHANNEL = 2
+BUTTON_IPS = 17
+BUTTON_SHUTDOWN = 27
+CENTER_JOY = 775
+THRESHOLD_JOY = 200
+
+# Initialize objects
+mcp3008 = MCP3008()
+lcd = LCD_Display(RS=LCD_RS_PIN, E=LCD_E_PIN, data_pins=LCD_DATA_PINS)
+
+# Global variables
+joystick_press_count = 0
+is_add = True
+
+def callback_btn_joy(pin):
+    global joystick_press_count
+    joystick_press_count += 1
+    print(f"The joystick has been pressed {joystick_press_count} times!")
+
+def setup():
+    lcd.send_instruction(0x38)  # Initialize LCD in 8-bit mode, 2 lines, 5x7 characters
+    lcd.send_instruction(0x0E)  # Display on, cursor on, blinking on
+    lcd.send_instruction(0x01)  # Clear display
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(BUTTON_JOY_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.add_event_detect(BUTTON_JOY_PIN, GPIO.FALLING, callback=callback_btn_joy, bouncetime=300)
+    GPIO.setup(BUZZER_PIN, GPIO.OUT)
+    GPIO.setup(BUTTON_IPS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.add_event_detect(BUTTON_IPS, GPIO.FALLING, callback=callback_btn_ips, bouncetime=300)
+    GPIO.setup(BUTTON_SHUTDOWN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.add_event_detect(BUTTON_SHUTDOWN, GPIO.FALLING, callback=callback_btn_shut, bouncetime=300)
+
+def get_ip_addresses():
+    ips = check_output(['hostname', '--all-ip-addresses']).decode('utf-8').strip().split()
+    return ips
+
+# Functie om tekst te tonen
+def display_text():
+    global is_add
+    lcd.send_instruction(0x01)  # Clear display
+    lcd.send_instruction(0x80)  # Move cursor to the first line
+    lcd.send_text(4*(' ')+('+')+(6*' ')+('-')+4*(' '))
+    lcd.send_instruction(0xC0)
+    if is_add == True:
+        lcd.send_text(3*(' ')+'(*)' + 4*' ' + '( )'+3*(' '))
+    elif is_add == False:
+        lcd.send_text(3*(' ')+'( )' + 4*' ' + '(*)'+3*(' '))
+
+
+def callback_btn_ips(pin):
+    ips = get_ip_addresses()
+    lcd.send_instruction(0x01)  # Clear display
+    lcd.send_instruction(0x80)  # Move cursor to the first line
+    lcd.send_text("First IP:")  # Send a title to the first line
+    lcd.send_instruction(0xC0)  # Move cursor to the second line
+    lcd.send_text(ips[0])
+    time.sleep(4)  # Wacht 1 seconde
+    lcd.send_instruction(0x01)  # Clear display
+    lcd.send_instruction(0x80)  # Move cursor to the first line
+    lcd.send_text("Second IP:")  # Send a title to the first line
+    lcd.send_instruction(0xC0)  # Move cursor to the second line
+    lcd.send_text(ips[1])
+    time.sleep(4)
+    display_text()
+
+def callback_btn_shut(pin):
+    lcd.send_instruction(0x01)  # Clear display
+    lcd.send_instruction(0x80)  # Move cursor to the first line
+    lcd.send_text("It's a Shutdown")
+    time.sleep(4)  # Wacht 1 seconde
+    display_text()
+
+
+
+def check_joystick_movement(x_pos):
+    """Controleer of de joystick naar links of rechts beweegt."""
+    global is_add
+    if x_pos < (CENTER_JOY - THRESHOLD_JOY):
+        print('Going Left')
+        is_add = True
+        display_text()
+    elif x_pos > (CENTER_JOY + THRESHOLD_JOY):
+        print('Going Rigth')
+        is_add = False
+        display_text()
+    else:
+        pass
+
+
+try:
+    setup()
+    display_text()
+    print("**** Starting APP ****")
+    socketio.run(app, debug=False, host='0.0.0.0')
+    while True:
+        joystick_x_value = mcp3008.read_channel(JOYSTICK_CHANNEL_X)
+        joystick_y_value = mcp3008.read_channel(JOYSTICK_CHANNEL_Y)
+        light_value = mcp3008.read_channel(LIGHT_CHANNEL)
+        check_joystick_movement(joystick_x_value)
+        time.sleep(1)
+except KeyboardInterrupt:
+    print("Program terminated by user.")
+finally:
+    GPIO.cleanup()
+    mcp3008.close()
