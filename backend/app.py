@@ -4,7 +4,7 @@ from repositories.DataRepository import DataRepository
 from flask import Flask, jsonify
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
-
+from RPi import GPIO
 # TODO: GPIO
 
 app = Flask(__name__)

@@ -45,3 +45,19 @@ class LCD_Display:
                 current_line += 1
 
             self.send_character(ord(char))
+    
+    def display_button_press_duration(self, duration):
+        self.send_instruction(0x01)  # Clear display
+        if duration < 1000:
+            self.send_text("kort")
+        elif duration >= 1000 and duration < 5000:
+            self.send_text("lang")
+        else:
+            self.send_text("Invalid")
+
+    def display_default_message(self):
+        self.send_instruction(0x01)  # Clear display
+        self.send_text("tweede")
+        time.sleep(2)  # Display "tweede" for 2 seconds
+        self.send_instruction(0x01)  # Clear display
+        self.send_text("eerste")

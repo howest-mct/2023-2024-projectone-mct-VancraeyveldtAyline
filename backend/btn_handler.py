@@ -42,9 +42,11 @@ class ButtonHandler:
             current_time = time.time()
             if current_time - self.press_time >= self.long_press_duration:
                 if self.long_press_callback:
-                    self.long_press_callback()  # Call the long press callback function
+                    self.long_press_callback(self.pin)  # Call the long press callback function
                 break
-            elif current_time - self.press_time >= self.short_press_duration:
+            elif current_time - self.press_time >= self.short_press_duration and not self.is_pressed:
                 if self.short_press_callback:
-                    self.short_press_callback()  # Call the short press callback function
+                    self.short_press_callback(self.pin)  # Call the short press callback function
+                break
             time.sleep(0.1)  # Add a small delay to reduce CPU usage
+

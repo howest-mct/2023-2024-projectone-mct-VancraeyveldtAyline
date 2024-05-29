@@ -1,3 +1,4 @@
+import threading
 import time
 from RPi import GPIO
 from subprocess import check_output
@@ -33,11 +34,13 @@ def long_press_message():
     lcd.send_instruction(0x01)  # Clear display
     lcd.send_instruction(0x80)  # Move cursor to the first line
     lcd.send_text("Long press!")  # Display long press message
+    print('worked2')
 
 def short_press_message():
     lcd.send_instruction(0x01)  # Clear display
     lcd.send_instruction(0x80)  # Move cursor to the first line
     lcd.send_text("Short press!")  # Display short press message
+    print('worked1')
 
 def setup():
     lcd.send_instruction(0x38)  # Initialize LCD in 8-bit mode, 2 lines, 5x7 characters
@@ -79,14 +82,19 @@ def play_tone(buzzer_pin):
 
 try:
     setup()
+    
+    ip_thread = threading.Thread(target=display_ip_addresses)
+    ip_thread.daemon = True  # Ensure the thread stops when the main program exits
+    ip_thread.start()
+
     button_handler = ButtonHandler(BUTTON_SHUTDOWN, 
                                        long_press_callback=long_press_message,
-                                       short_press_duration=1, short_press_callback=short_press_message)
+                                       short_press_duration=1, short_press_callback=short_press_message, long_press_duration=5)
     while True:
         joystick_x_value = mcp3008.read_channel(JOYSTICK_CHANNEL_X)
         joystick_y_value = mcp3008.read_channel(JOYSTICK_CHANNEL_Y)
         light_value = mcp3008.read_channel(LIGHT_CHANNEL)
-        display_ip_addresses()
+        # display_ip_addresses()
         time.sleep(1)
 except KeyboardInterrupt:
     print("Program terminated by user.")
