@@ -1,37 +1,8 @@
-import threading
-from repositories.DataRepository import DataRepository
-from flask import Flask, jsonify
-from flask_socketio import SocketIO, emit
-from flask_cors import CORS
 import time
 from RPi import GPIO
 from subprocess import check_output
 from lcd import LCD_Display
 from mcp3008 import MCP3008
-
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'HELLOTHISISSCERET'
-
-# ping interval forces rapid B2F communication
-socketio = SocketIO(app, cors_allowed_origins="*",
-                    async_mode='gevent', ping_interval=0.5)
-CORS(app)
-
-# API ENDPOINTS
-@app.route('/')
-def hallo():
-    return "Server is running, er zijn momenteel geen API endpoints beschikbaar."
-
-# SOCKET IO
-@socketio.on('connect')
-def initial_connection():
-    print('A new client connect')
-
-@socketio.on('F2B_switch_light')
-def switch_light(data):
-    print('licht gaat aan/uit', data)
-
-
 
 # Constant values
 BUZZER_PIN = 22
@@ -133,8 +104,6 @@ def check_joystick_movement(x_pos):
 try:
     setup()
     display_text()
-    print("**** Starting APP ****")
-    socketio.run(app, debug=False, host='0.0.0.0')
     while True:
         joystick_x_value = mcp3008.read_channel(JOYSTICK_CHANNEL_X)
         joystick_y_value = mcp3008.read_channel(JOYSTICK_CHANNEL_Y)
