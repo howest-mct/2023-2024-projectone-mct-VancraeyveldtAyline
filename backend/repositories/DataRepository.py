@@ -1,4 +1,6 @@
 from .Database import Database
+from datetime import datetime
+
 
 
 class DataRepository:
@@ -32,3 +34,24 @@ class DataRepository:
         sql = "UPDATE lampen SET status = %s"
         params = [status]
         return Database.execute_sql(sql, params)
+    
+    
+    @staticmethod
+    def insert_values_historiek(deviceid: int, waarde: float, opmerking:str = None):
+        sql = "INSERT INTO lampen SET status = %s"
+        sql = "INSERT INTO Historiek (waarde, tijdstip_waarde, opmerking, device_id) VALUES (%s, %s, %s, %s);"
+        huidige_tijd = datetime.now()
+        mysql_datetime_formaat = huidige_tijd.strftime('%Y-%m-%d %H:%M:%S')
+        params = [waarde, mysql_datetime_formaat, opmerking, deviceid]
+        return Database.execute_sql(sql, params)
+
+    @staticmethod
+    def read_records_historiek_by_id(id: int):
+        sql = "SELECT * from Historiek WHERE id = %s"
+        params = [id]
+        return Database.get_rows(sql, params)
+    
+    @staticmethod
+    def read_records_historiek():
+        sql = "SELECT * from Historiek"
+        return Database.get_rows(sql)
