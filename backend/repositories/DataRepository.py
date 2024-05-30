@@ -17,6 +17,11 @@ class DataRepository:
         sql = "SELECT * FROM Gebruikers WHERE gebruiker_id = %s"
         params = [userid]
         return Database.get_one_row(sql, params)
+    
+    @staticmethod
+    def read_users():
+        sql = "SELECT * FROM Gebruikers"
+        return Database.get_one_row(sql)
 
     @staticmethod
     def create_user(username, email, password):
@@ -81,7 +86,18 @@ class DataRepository:
         sql = "DELETE FROM Product_Types WHERE type_id = %s"
         params = [typeid]
         return Database.execute_sql(sql, params)
+       
+    @staticmethod
+    def update_type(typeid: int, producttype: str):
+        sql = "UPDATE Product_Types SET product_type = %s WHERE type_id = %s"
+        params = [producttype, typeid]
+        return Database.execute_sql(sql, params)
     
+    @staticmethod
+    def read_type(typeid: int):
+        sql = "SELECT * FROM Product_Types WHERE type_id = %s"
+        params = [typeid]
+        return Database.get_one_row(sql, params)
 
 # ****************** PRODUCTS ******************
     @staticmethod
@@ -101,6 +117,12 @@ class DataRepository:
         params = [productid]
         return Database.execute_sql(sql, params)
 
+    @staticmethod
+    def update_product(productid: int, barcode, productnaam: str, producttypeid: int):
+        sql = "UPDATE Producten SET barcode = %s, productnaam = %s, producttypeid = %s WHERE productid = %s"
+        params = [barcode, productnaam, producttypeid, productid]
+        return Database.execute_sql(sql, params)
+    
 
 # ****************** PRODUCTEN HISTORIEK ******************
     @staticmethod
