@@ -10,7 +10,7 @@ from lcd import LCD_Display
 from mcp3008 import MCP3008
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'HELLOTHISISSCERET'
+app.config['SECRET_KEY'] = 'UHFIUZIMBUI'
 
 # ping interval forces rapid B2F communication
 socketio = SocketIO(app, cors_allowed_origins="*",
