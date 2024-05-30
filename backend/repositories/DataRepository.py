@@ -1,8 +1,6 @@
 from .Database import Database
 from datetime import datetime
 
-
-
 class DataRepository:
     @staticmethod
     def json_or_formdata(request):

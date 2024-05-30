@@ -23,7 +23,7 @@ def hallo():
     return "Server is running, er zijn momenteel geen API endpoints beschikbaar."
 
 @app.route('/historiek/', methods=['GET'])
-def get__historiek():
+def historiek():
     if request.method == 'GET':
         complete_historiek = DataRepository.read_records_historiek()
         if complete_historiek is not None:
@@ -31,14 +31,31 @@ def get__historiek():
         else:
             return jsonify(message="error"), 404
 
-@app.route('/historiek/<deviceid>/', methods=['GET'])
-def get_records_device(deviceid):
+@app.route('/historiek/<filter>/', methods=['GET'])
+def get_records_device(filter):
     if request.method == 'GET':
-        records = DataRepository.read_records_historiek_by_id(deviceid)
+        if isinstance(filter, int):
+            records = DataRepository.read_records_historiek_by_id(filter)
+        elif isinstance(filter, str):
+            records = DataRepository.read_records_historiek_by_date(filter)
         if records is not None:
             return jsonify(trein=records), 200
         else:
             return jsonify(message='error'), 404
+        
+@app.route('/users/', methods=['GET', 'POST', 'DELETE'])
+def historiek():
+    if request.method == 'GET':
+        complete_historiek = DataRepository.read_records_historiek()
+        if complete_historiek is not None:
+            return jsonify(historiek=complete_historiek), 200
+        else:
+            return jsonify(message="error"), 404
+    elif request.method == 'POST':
+        gegevens = DataRepository.json_or_formdata(request)
+        data = DataRepository.create_trein(gegevens['vertrek'], gegevens['bestemmingID'], gegevens['spoor'], gegevens['vertraging'], gegevens['afgeschaft'])
+        return jsonify(treinid = data), 201
+
 
 # SOCKET IO
 @socketio.on('connect')
