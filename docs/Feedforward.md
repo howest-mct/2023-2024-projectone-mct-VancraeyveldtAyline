@@ -34,15 +34,17 @@
 
 ## Gesprek 1 (Datum: 28/05/2024)
 
-Lector:
+Lector: Stijn & Pieter-Jan
 
 Vragen voor dit gesprek:
 
-- vraag 1: V
+- vraag 1: /
 
 Dit is de feedback op mijn vragen.
 
-- feedback 1: G
+- feedback 1: In de tabel Product Types een int primary key gebruiken in plaats van varchar()
+
+- feedback 2: Ik was aangeraden geweest om in plaats van TIMESTAMP DATETIME te gebruiken.
 
 ## Gesprek 2 (Datum: xx/xx/2024)
 
@@ -97,6 +99,34 @@ Dit is de feedback op mijn vragen.
 ## Consult 2 (Datum: 24/05/2024)
 
 Lector: Stijn
+
+Vragen voor dit gesprek:
+
+- vraag 1: Is mijn database structuur logisch?
+
+Dit is de feedback op mijn vragen.
+
+- feedback 1: Voorkeuren per gebruiker bijhouden, Registratiemoment toevoegen, Data scheiden, historiek bij houden van wat er in en uit de kast is gegaan.
+
+## Consult 3 (Datum: 30/05/2024)
+
+Lector: Geert
+
+Vragen voor dit gesprek:
+
+- vraag 1: Het lukt niet om de library voor de neopixel ring te installeren en gebruiken, hoe kan dit opgelost worden?
+
+- vraag 2: Kan ik voordat ik de barcode sensor soldeer de pinnen er in zetten en zo de barcode snsor tijdelijk testen?
+
+Dit is de feedback op mijn vragen.
+
+- feedback 1: De file moet gerunt worden met sudo.
+
+- feedback 2: Het is mogelijk door de uiteinden van de wires door de gaten te steken en naar de zijkant toe drukken.
+
+## Consult 4 (Datum: 31/05/2024)
+
+Lector: Christophe
 
 Vragen voor dit gesprek:
 
