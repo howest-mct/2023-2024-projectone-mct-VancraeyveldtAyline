@@ -1,0 +1,30 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+.historiek__title {
+    text-align: center;
+}
+
+.historiek__table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.historiek__table,
+.historiek__table-header,
+.historiek__table-cell {
+    border: 1px solid black;
+}
+
+.historiek__table-header,
+.historiek__table-cell {
+    padding: 8px;
+    text-align: center;
+}
+
+.historiek__table-header {
+    background-color: #f2f2f2;
+}

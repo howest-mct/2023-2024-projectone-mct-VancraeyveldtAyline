@@ -24,6 +24,7 @@ def hallo():
     return "Server is running, er zijn momenteel geen API endpoints beschikbaar."
 
 
+
 # ****************** HISTORIEK ******************   
 @app.route('/historiek/', methods=['GET'])
 def get_historiek():
@@ -145,7 +146,7 @@ BUTTON_IPS = 17
 BUTTON_SHUTDOWN = 27
 CENTER_JOY = 775
 THRESHOLD_JOY = 200
-THRESHOLD_LIGHT = 700
+THRESHOLD_LIGHT = 850
 
 # LED strip configuratie:
 LED_COUNT = 24       # Aantal LED pixels.
@@ -167,6 +168,7 @@ joystick_press_count = 0
 is_add = True
 is_open = False
 is_neolight = False
+
 
 def callback_btn_joy(pin):
     global joystick_press_count

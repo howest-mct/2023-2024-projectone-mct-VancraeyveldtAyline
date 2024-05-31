@@ -9,6 +9,7 @@ class DataRepository:
         else:
             gegevens = request.form.to_dict()
         return gegevens
+    
 
 
 # ****************** USERS ******************
@@ -59,7 +60,7 @@ class DataRepository:
     
     @staticmethod
     def read_records_historiek():
-        sql = "SELECT * from Historiek"
+        sql = "SELECT * FROM Historiek as h inner join Devices as d on h.device_id = d.device_id"
         return Database.get_rows(sql)
     
     @staticmethod
