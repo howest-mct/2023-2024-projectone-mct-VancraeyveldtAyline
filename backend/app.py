@@ -9,6 +9,7 @@ from subprocess import check_output
 from lcd import LCD_Display
 from mcp3008 import MCP3008
 from rpi_ws281x import PixelStrip, Color
+import serial
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'HELLOTHISISSCERET'
@@ -146,6 +147,9 @@ BUTTON_SHUTDOWN = 27
 CENTER_JOY = 775
 THRESHOLD_JOY = 200
 THRESHOLD_LIGHT = 850
+MIN_NUMBER_LCD = -20
+MAX_NUMBER_LCD = 20
+
 
 # LED strip configuratie:
 LED_COUNT = 24       # Aantal LED pixels.
@@ -161,18 +165,34 @@ mcp3008 = MCP3008()
 lcd = LCD_Display(RS=LCD_RS_PIN, E=LCD_E_PIN, data_pins=LCD_DATA_PINS)
 strip = PixelStrip(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
 strip.begin()
+ser = serial.Serial(
+    port='/dev/ttyUSB0',  # Gebruik /dev/ttyS0 voor oudere RPi-modellen
+    baudrate=9600,
+    timeout=1
+)
 
 # Global variables
 joystick_press_count = 0
 is_add = True
 is_open = False
 is_neolight = False
+is_barcode = False
+current_number = 1
+barcode = ''
 
 
 def callback_btn_joy(pin):
-    global joystick_press_count
+    global joystick_press_count, is_barcode, current_number, barcode
     joystick_press_count += 1
     print(f"The joystick has been pressed {joystick_press_count} times!")
+    if is_barcode == True:
+        DataRepository.insert_values_product_historiek(current_number, barcode)
+        lcd.send_instruction(0x01)  # Clear display
+        lcd.send_instruction(0x80)
+        lcd.send_text("Succes!")
+        time.sleep(1)
+        is_barcode = False
+        display_text()
 
 def setup():
     lcd.send_instruction(0x38)  # Initialize LCD in 8-bit mode, 2 lines, 5x7 characters
@@ -195,14 +215,18 @@ def display_text():
     global is_add
     lcd.send_instruction(0x01)  # Clear display
     lcd.send_instruction(0x80)  # Move cursor to the first line
-    lcd.send_text(4*(' ')+('+')+(6*' ')+('-')+4*(' '))
-    lcd.send_instruction(0xC0)
-    if is_add == True:
-        lcd.send_text(3*(' ')+'(*)' + 4*' ' + '( )'+3*(' '))
-        # colorWipe(strip, Color(0, 0, 0))
-    elif is_add == False:
-        lcd.send_text(3*(' ')+'( )' + 4*' ' + '(*)'+3*(' '))
-        # colorWipe(strip, Color(0, 0, 0))
+    lcd.send_text("Welcome back!")
+
+    # lcd.scroll_text("This is a very long message that needs to scroll ", line=0, delay=0.3)
+    
+    # lcd.send_text(4*(' ')+('+')+(6*' ')+('-')+4*(' '))
+    # lcd.send_instruction(0xC0)
+    # if is_add == True:
+    #     lcd.send_text(3*(' ')+'(*)' + 4*' ' + '( )'+3*(' '))
+    #     # colorWipe(strip, Color(0, 0, 0))
+    # elif is_add == False:
+    #     lcd.send_text(3*(' ')+'( )' + 4*' ' + '(*)'+3*(' '))
+    #     # colorWipe(strip, Color(0, 0, 0))
 
 def callback_btn_ips(pin):
     ips = get_ip_addresses()
@@ -227,33 +251,33 @@ def callback_btn_shut(pin):
     time.sleep(4)  # Wacht 1 seconde
     display_text()
 
-def check_joystick_hor_movement(x_pos):
-    global is_add, is_neolight
-    if x_pos < (CENTER_JOY - THRESHOLD_JOY):
-        print('Going Left')
-        is_add = True
-        is_neolight = True
-        display_text()
-        DataRepository.insert_values_historiek(3, x_pos, 'x-pos: left')
-    elif x_pos > (CENTER_JOY + THRESHOLD_JOY):
-        print('Going Rigth')
-        is_add = False
-        is_neolight = True
-        display_text()
-        DataRepository.insert_values_historiek(3, x_pos, 'x-pos: rigth')
+def check_joystick_movement(x_pos, y_pos):
+    global is_neolight, current_number, is_barcode
+    if abs(x_pos - CENTER_JOY) > abs(y_pos - CENTER_JOY):
+        if (x_pos < (CENTER_JOY - THRESHOLD_JOY)):
+            print('Going Left')
+            is_neolight = True
+            DataRepository.insert_values_historiek(3, x_pos, 'x-pos: left')
+        elif (x_pos > (CENTER_JOY + THRESHOLD_JOY)):
+            print('Going Rigth')
+            is_neolight = True
+            DataRepository.insert_values_historiek(3, x_pos, 'x-pos: rigth')
     else:
-        pass
+        if (y_pos < (CENTER_JOY - THRESHOLD_JOY)):
+            print('Going Up')
+            if is_barcode == True:
+                if current_number < MAX_NUMBER_LCD:
+                    current_number += 1
+                    display_number(current_number)
+            DataRepository.insert_values_historiek(3, y_pos, 'y_pos: up')
+        elif (y_pos > (CENTER_JOY + THRESHOLD_JOY)):
+            print('Going Down')
+            if is_barcode == True:
+                if current_number > MIN_NUMBER_LCD:
+                    current_number -= 1
+                    display_number(current_number)
+            DataRepository.insert_values_historiek(3, y_pos, 'y_pos: down')
 
-def check_joystick_ver_movement(y_pos):
-    global is_add
-    if y_pos < (CENTER_JOY - THRESHOLD_JOY):
-        print('Going Up')
-        DataRepository.insert_values_historiek(3, y_pos, 'y_pos: up')
-    elif y_pos > (CENTER_JOY + THRESHOLD_JOY):
-        print('Going Down')
-        DataRepository.insert_values_historiek(3, y_pos, 'y_pos: down')
-    else:
-        pass
 
 def check_lightsensor_activity(light_value):
     global is_open
@@ -275,7 +299,6 @@ def colorWipe(strip, color, wait_ms=50):
         strip.show()
         time.sleep(wait_ms / 1000.0)
         
-
 def neopixelring():
     global is_neolight
     if is_neolight == True:
@@ -283,19 +306,50 @@ def neopixelring():
         colorWipe(strip, Color(0, 0, 0))
         is_neolight = False
 
+def display_number(number):
+    lcd.send_instruction(0x01)  # Clear display
+    lcd.send_instruction(0x80)  # Move cursor to the first line
+    lcd.send_text(f"Amount: {number}")
 
+def read_barcode():
+    global current_number, is_barcode, barcode
+    if ser.in_waiting > 0:
+        is_barcode = True
+        line = ser.readline()
+        barcode = line.decode().rstrip()
+        DataRepository.insert_values_historiek(2, barcode, "barcode gescant")
+        print(f"Received: {str(barcode)}")
+        lcd.send_instruction(0x01)  # Clear display
+        lcd.send_instruction(0x80)  # Move cursor to the first line
+        product_name_object = DataRepository.read_product_name_by_barcode(barcode)
+        product_name = product_name_object['product_naam']
+        print(product_name)
+        lcd.send_text(product_name)
+        lcd.send_instruction(0xC0)
+        current_number = 1
+        display_number(current_number)
+        
+        
+
+        # DataRepository.insert_values_product_historiek(-2, line.decode().rstrip())
+    time.sleep(0.1)
+        
 def run_flask():
     socketio.run(app, debug=False, host='0.0.0.0')
 
 def main_loop():
     while True:
         joystick_x_value = mcp3008.read_channel(JOYSTICK_CHANNEL_X)
+        # print(joystick_x_value)
         joystick_y_value = mcp3008.read_channel(JOYSTICK_CHANNEL_Y)
+        # print(joystick_y_value)
         light_value = mcp3008.read_channel(LIGHT_CHANNEL)
-        check_joystick_hor_movement(joystick_x_value)
-        check_joystick_ver_movement(joystick_y_value)
+        # check_joystick_hor_movement(joystick_x_value)
+        # check_joystick_ver_movement(joystick_y_value)
+        check_joystick_movement(joystick_x_value, joystick_y_value)
         check_lightsensor_activity(light_value)
         neopixelring()  # Roep de neopixelringfunctie binnen de hoofdlus aan
+        read_barcode()
         time.sleep(1)
 
 try:
@@ -313,4 +367,5 @@ except KeyboardInterrupt:
     print("Program terminated by user.")
 finally:
     GPIO.cleanup()
+    ser.close()
     mcp3008.close()

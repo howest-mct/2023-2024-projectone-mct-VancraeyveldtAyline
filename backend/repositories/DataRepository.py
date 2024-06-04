@@ -105,6 +105,13 @@ class DataRepository:
     def read_products():
         sql = "SELECT * FROM Producten"
         return Database.get_rows(sql)
+    
+    @staticmethod
+    def read_product_name_by_barcode(barcode: str):
+        sql = "SELECT Producten.product_naam FROM Producten where barcode = %s"
+        params = [barcode]
+        return Database.get_one_row(sql, params)
+
 
     @staticmethod
     def create_product(barcode, productnaam: str, producttypeid: int):
@@ -127,11 +134,11 @@ class DataRepository:
 
 # ****************** PRODUCTEN HISTORIEK ******************
     @staticmethod
-    def insert_values_product_historiek(wijziging: int, product_id: int):
-        sql = "INSERT INTO Producten_Historiek (product_aantal_wijziging, tijdstip, product_id) VALUES (%s, %s, %s);"
+    def insert_values_product_historiek(wijziging: int, barcode: str):
+        sql = "INSERT INTO Producten_Historiek (product_aantal_wijziging, tijdstip, product_id) VALUES (%s, %s, (SELECT product_id FROM Producten WHERE barcode = %s));"
         huidige_tijd = datetime.now()
         mysql_datetime_formaat = huidige_tijd.strftime('%Y-%m-%d %H:%M:%S')
-        params = [wijziging, mysql_datetime_formaat, product_id]
+        params = [wijziging, mysql_datetime_formaat, barcode]
         return Database.execute_sql(sql, params)
 
     @staticmethod
