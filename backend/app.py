@@ -201,14 +201,15 @@ def display_text():
     global is_add
     lcd.send_instruction(0x01)  # Clear display
     lcd.send_instruction(0x80)  # Move cursor to the first line
-    lcd.send_text(4*(' ')+('+')+(6*' ')+('-')+4*(' '))
-    lcd.send_instruction(0xC0)
-    if is_add == True:
-        lcd.send_text(3*(' ')+'(*)' + 4*' ' + '( )'+3*(' '))
-        # colorWipe(strip, Color(0, 0, 0))
-    elif is_add == False:
-        lcd.send_text(3*(' ')+'( )' + 4*' ' + '(*)'+3*(' '))
-        # colorWipe(strip, Color(0, 0, 0))
+    lcd.send_text('Welcome!')
+    # lcd.send_text(4*(' ')+('+')+(6*' ')+('-')+4*(' '))
+    # lcd.send_instruction(0xC0)
+    # if is_add == True:
+    #     lcd.send_text(3*(' ')+'(*)' + 4*' ' + '( )'+3*(' '))
+    #     # colorWipe(strip, Color(0, 0, 0))
+    # elif is_add == False:
+    #     lcd.send_text(3*(' ')+'( )' + 4*' ' + '(*)'+3*(' '))
+    #     # colorWipe(strip, Color(0, 0, 0))
 
 def callback_btn_ips(pin):
     ips = get_ip_addresses()
@@ -291,8 +292,14 @@ def neopixelring():
 def read_barcode():
     if ser.in_waiting > 0:
         line = ser.readline()
-        print(f"Received: {line.decode().rstrip()}")
-        
+        barcode = line.decode().rstrip()
+        print(f"Received: {str(barcode)}")
+        lcd.send_instruction(0x01)  # Clear display
+        lcd.send_instruction(0x80)  # Move cursor to the first line
+        product_name_object = DataRepository.read_product_name_by_barcode(barcode)
+        product_name = product_name_object['product_naam']
+        print(product_name)
+        lcd.send_text(product_name)
         DataRepository.insert_values_product_historiek(-2, line.decode().rstrip())
     time.sleep(0.1)
         

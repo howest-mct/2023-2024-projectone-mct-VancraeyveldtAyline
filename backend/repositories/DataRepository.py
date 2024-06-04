@@ -105,6 +105,13 @@ class DataRepository:
     def read_products():
         sql = "SELECT * FROM Producten"
         return Database.get_rows(sql)
+    
+    @staticmethod
+    def read_product_name_by_barcode(barcode: str):
+        sql = "SELECT Producten.product_naam FROM Producten where barcode = %s"
+        params = [barcode]
+        return Database.get_one_row(sql, params)
+
 
     @staticmethod
     def create_product(barcode, productnaam: str, producttypeid: int):
