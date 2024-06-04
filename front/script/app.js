@@ -30,7 +30,7 @@ const showRecordsHistoriek = function (records) {
     console.log('test')
     console.log('Records ontvangen:', records);
     if (records && records.historiek) {
-      for (let record of records) {
+      for (let record of records.historiek) {
         voegRijToe(record.device_naam, record.waarde, record.tijdstip_waarde, record.opmerking);
       }
     } else {
