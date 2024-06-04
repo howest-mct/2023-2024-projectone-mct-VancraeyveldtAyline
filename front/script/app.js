@@ -15,6 +15,7 @@ const voegRijToe = function (sensorNaam, meting, tijdstip, opmerking) {
 };
 
 const listenToUI = function () {
+  loadMoreBtn = document.querySelector('load-more-btn')
 };
 
 const listenToSocket = function () {
