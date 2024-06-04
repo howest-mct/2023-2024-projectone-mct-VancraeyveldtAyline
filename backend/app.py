@@ -251,41 +251,33 @@ def callback_btn_shut(pin):
     time.sleep(4)  # Wacht 1 seconde
     display_text()
 
-def check_joystick_hor_movement(x_pos):
-    global is_add, is_neolight
-    if x_pos < (CENTER_JOY - THRESHOLD_JOY):
-        print('Going Left')
-        is_add = True
-        is_neolight = True
-        display_text()
-        DataRepository.insert_values_historiek(3, x_pos, 'x-pos: left')
-    elif x_pos > (CENTER_JOY + THRESHOLD_JOY):
-        print('Going Rigth')
-        is_add = False
-        is_neolight = True
-        display_text()
-        DataRepository.insert_values_historiek(3, x_pos, 'x-pos: rigth')
+def check_joystick_movement(x_pos, y_pos):
+    global is_neolight, current_number, is_barcode
+    if abs(x_pos - CENTER_JOY) > abs(y_pos - CENTER_JOY):
+        if (x_pos < (CENTER_JOY - THRESHOLD_JOY)):
+            print('Going Left')
+            is_neolight = True
+            DataRepository.insert_values_historiek(3, x_pos, 'x-pos: left')
+        elif (x_pos > (CENTER_JOY + THRESHOLD_JOY)):
+            print('Going Rigth')
+            is_neolight = True
+            DataRepository.insert_values_historiek(3, x_pos, 'x-pos: rigth')
     else:
-        pass
+        if (y_pos < (CENTER_JOY - THRESHOLD_JOY)):
+            print('Going Up')
+            if is_barcode == True:
+                if current_number < MAX_NUMBER_LCD:
+                    current_number += 1
+                    display_number(current_number)
+            DataRepository.insert_values_historiek(3, y_pos, 'y_pos: up')
+        elif (y_pos > (CENTER_JOY + THRESHOLD_JOY)):
+            print('Going Down')
+            if is_barcode == True:
+                if current_number > MIN_NUMBER_LCD:
+                    current_number -= 1
+                    display_number(current_number)
+            DataRepository.insert_values_historiek(3, y_pos, 'y_pos: down')
 
-def check_joystick_ver_movement(y_pos):
-    global current_number, is_barcode
-    if y_pos < (CENTER_JOY - THRESHOLD_JOY):
-        print('Going Up')
-        if is_barcode == True:
-            if current_number < MAX_NUMBER_LCD:
-                current_number += 1
-                display_number(current_number)
-        DataRepository.insert_values_historiek(3, y_pos, 'y_pos: up')
-    elif y_pos > (CENTER_JOY + THRESHOLD_JOY):
-        print('Going Down')
-        if is_barcode == True:
-            if current_number > MIN_NUMBER_LCD:
-                current_number -= 1
-                display_number(current_number)
-        DataRepository.insert_values_historiek(3, y_pos, 'y_pos: down')
-    else:
-        pass
 
 def check_lightsensor_activity(light_value):
     global is_open
@@ -342,17 +334,19 @@ def read_barcode():
         # DataRepository.insert_values_product_historiek(-2, line.decode().rstrip())
     time.sleep(0.1)
         
-
 def run_flask():
     socketio.run(app, debug=False, host='0.0.0.0')
 
 def main_loop():
     while True:
         joystick_x_value = mcp3008.read_channel(JOYSTICK_CHANNEL_X)
+        # print(joystick_x_value)
         joystick_y_value = mcp3008.read_channel(JOYSTICK_CHANNEL_Y)
+        # print(joystick_y_value)
         light_value = mcp3008.read_channel(LIGHT_CHANNEL)
-        check_joystick_hor_movement(joystick_x_value)
-        check_joystick_ver_movement(joystick_y_value)
+        # check_joystick_hor_movement(joystick_x_value)
+        # check_joystick_ver_movement(joystick_y_value)
+        check_joystick_movement(joystick_x_value, joystick_y_value)
         check_lightsensor_activity(light_value)
         neopixelring()  # Roep de neopixelringfunctie binnen de hoofdlus aan
         read_barcode()
