@@ -9,6 +9,7 @@ from subprocess import check_output
 from lcd import LCD_Display
 from mcp3008 import MCP3008
 from rpi_ws281x import PixelStrip, Color
+import serial
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'HELLOTHISISSCERET'
@@ -161,6 +162,11 @@ mcp3008 = MCP3008()
 lcd = LCD_Display(RS=LCD_RS_PIN, E=LCD_E_PIN, data_pins=LCD_DATA_PINS)
 strip = PixelStrip(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
 strip.begin()
+ser = serial.Serial(
+    port='/dev/ttyUSB0',  # Gebruik /dev/ttyS0 voor oudere RPi-modellen
+    baudrate=9600,
+    timeout=1
+)
 
 # Global variables
 joystick_press_count = 0
@@ -275,7 +281,6 @@ def colorWipe(strip, color, wait_ms=50):
         strip.show()
         time.sleep(wait_ms / 1000.0)
         
-
 def neopixelring():
     global is_neolight
     if is_neolight == True:
@@ -283,6 +288,14 @@ def neopixelring():
         colorWipe(strip, Color(0, 0, 0))
         is_neolight = False
 
+def read_barcode():
+    if ser.in_waiting > 0:
+        line = ser.readline()
+        print(f"Received: {line.decode().rstrip()}")
+        
+        DataRepository.insert_values_product_historiek(-2, line.decode().rstrip())
+    time.sleep(0.1)
+        
 
 def run_flask():
     socketio.run(app, debug=False, host='0.0.0.0')
@@ -296,6 +309,7 @@ def main_loop():
         check_joystick_ver_movement(joystick_y_value)
         check_lightsensor_activity(light_value)
         neopixelring()  # Roep de neopixelringfunctie binnen de hoofdlus aan
+        read_barcode()
         time.sleep(1)
 
 try:
@@ -313,4 +327,5 @@ except KeyboardInterrupt:
     print("Program terminated by user.")
 finally:
     GPIO.cleanup()
+    ser.close()
     mcp3008.close()
