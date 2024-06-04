@@ -45,3 +45,18 @@ class LCD_Display:
                 current_line += 1
 
             self.send_character(ord(char))
+
+    def scroll_text(self, text, line=0, delay=0.5):
+        if line == 1:
+            self.send_instruction(0xC0)
+        else:
+            self.send_instruction(0x80)
+
+        display_text = text.ljust(16)
+        for i in range(len(display_text)):
+            self.send_text(display_text[i:i+16])
+            time.sleep(delay)
+            if line == 1:
+                self.send_instruction(0xC0)
+            else:
+                self.send_instruction(0x80)

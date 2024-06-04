@@ -147,6 +147,9 @@ BUTTON_SHUTDOWN = 27
 CENTER_JOY = 775
 THRESHOLD_JOY = 200
 THRESHOLD_LIGHT = 850
+MIN_NUMBER_LCD = -20
+MAX_NUMBER_LCD = 20
+
 
 # LED strip configuratie:
 LED_COUNT = 24       # Aantal LED pixels.
@@ -173,12 +176,23 @@ joystick_press_count = 0
 is_add = True
 is_open = False
 is_neolight = False
+is_barcode = False
+current_number = 1
+barcode = ''
 
 
 def callback_btn_joy(pin):
-    global joystick_press_count
+    global joystick_press_count, is_barcode, current_number, barcode
     joystick_press_count += 1
     print(f"The joystick has been pressed {joystick_press_count} times!")
+    if is_barcode == True:
+        DataRepository.insert_values_product_historiek(current_number, barcode)
+        lcd.send_instruction(0x01)  # Clear display
+        lcd.send_instruction(0x80)
+        lcd.send_text("Succes!")
+        time.sleep(1)
+        is_barcode = False
+        display_text()
 
 def setup():
     lcd.send_instruction(0x38)  # Initialize LCD in 8-bit mode, 2 lines, 5x7 characters
@@ -201,7 +215,10 @@ def display_text():
     global is_add
     lcd.send_instruction(0x01)  # Clear display
     lcd.send_instruction(0x80)  # Move cursor to the first line
-    lcd.send_text('Welcome!')
+    lcd.send_text("Welcome back!")
+
+    # lcd.scroll_text("This is a very long message that needs to scroll ", line=0, delay=0.3)
+    
     # lcd.send_text(4*(' ')+('+')+(6*' ')+('-')+4*(' '))
     # lcd.send_instruction(0xC0)
     # if is_add == True:
@@ -252,12 +269,20 @@ def check_joystick_hor_movement(x_pos):
         pass
 
 def check_joystick_ver_movement(y_pos):
-    global is_add
+    global current_number, is_barcode
     if y_pos < (CENTER_JOY - THRESHOLD_JOY):
         print('Going Up')
+        if is_barcode == True:
+            if current_number < MAX_NUMBER_LCD:
+                current_number += 1
+                display_number(current_number)
         DataRepository.insert_values_historiek(3, y_pos, 'y_pos: up')
     elif y_pos > (CENTER_JOY + THRESHOLD_JOY):
         print('Going Down')
+        if is_barcode == True:
+            if current_number > MIN_NUMBER_LCD:
+                current_number -= 1
+                display_number(current_number)
         DataRepository.insert_values_historiek(3, y_pos, 'y_pos: down')
     else:
         pass
@@ -289,8 +314,15 @@ def neopixelring():
         colorWipe(strip, Color(0, 0, 0))
         is_neolight = False
 
+def display_number(number):
+    lcd.send_instruction(0x01)  # Clear display
+    lcd.send_instruction(0x80)  # Move cursor to the first line
+    lcd.send_text(f"Amount: {number}")
+
 def read_barcode():
+    global current_number, is_barcode, barcode
     if ser.in_waiting > 0:
+        is_barcode = True
         line = ser.readline()
         barcode = line.decode().rstrip()
         print(f"Received: {str(barcode)}")
@@ -300,7 +332,13 @@ def read_barcode():
         product_name = product_name_object['product_naam']
         print(product_name)
         lcd.send_text(product_name)
-        DataRepository.insert_values_product_historiek(-2, line.decode().rstrip())
+        lcd.send_instruction(0xC0)
+        current_number = 1
+        display_number(current_number)
+        
+        
+
+        # DataRepository.insert_values_product_historiek(-2, line.decode().rstrip())
     time.sleep(0.1)
         
 
