@@ -1,6 +1,6 @@
 import threading
 from repositories.DataRepository import DataRepository
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 import time
@@ -8,6 +8,7 @@ from RPi import GPIO
 from subprocess import check_output
 from lcd import LCD_Display
 from mcp3008 import MCP3008
+from rpi_ws281x import PixelStrip, Color
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'HELLOTHISISSCERET'
@@ -22,15 +23,113 @@ CORS(app)
 def hallo():
     return "Server is running, er zijn momenteel geen API endpoints beschikbaar."
 
+
+# ****************** HISTORIEK ******************   
+@app.route('/historiek/', methods=['GET'])
+def get_historiek():
+    if request.method == 'GET':
+        complete_historiek = DataRepository.read_records_historiek()
+        if complete_historiek is not None:
+            return jsonify(historiek=complete_historiek), 200
+        else:
+            return jsonify(message="error"), 404
+
+@app.route('/historiek/<filter>/', methods=['GET'])
+def get_records_device(filter):
+    if request.method == 'GET':
+        if isinstance(filter, int):
+            records = DataRepository.read_records_historiek_by_id(filter)
+        elif isinstance(filter, str):
+            records = DataRepository.read_records_historiek_by_date(filter)
+        if records is not None:
+            return jsonify(trein=records), 200
+        else:
+            return jsonify(message='error'), 404
+
+
+# ****************** USERS ******************
+@app.route('/users/', methods=['GET', 'POST'])
+def get_users():
+    if request.method == 'GET':
+        users = DataRepository.read_users()
+        if users is not None:
+            return jsonify(users=users), 200
+        else:
+            return jsonify(message="error"), 404
+    elif request.method == 'POST':
+        gegevens = DataRepository.json_or_formdata(request)
+        data = DataRepository.create_user(gegevens['username'], gegevens['email'], gegevens['password'])
+        return jsonify(userid = data), 201
+
+@app.route('/users/<userid>/', methods=['GET', 'DELETE', 'PUT'])
+def get_user_by_id(userid):
+    if request.method == 'GET':
+        user = DataRepository.read_user(userid)
+        if user is not None:
+            return jsonify(user=user), 200
+        else:
+            return jsonify(message='error'), 404
+    elif request.method == 'PUT':
+        gegevens = DataRepository.json_or_formdata(request)
+        data = DataRepository.update_user(userid, gegevens['username'], gegevens['email'], gegevens['password'])
+        if data is not None:
+            if data > 0:
+                return jsonify(userid = id), 200
+            else:
+                return jsonify(status=data), 200
+        else:
+            return jsonify(message="error"), 404
+
+    elif request.method == 'DELETE':
+        data = DataRepository.delete_user(userid)
+        return jsonify(status = data), 200
+
+
+# ****************** TYPES ******************
+@app.route('/types/', methods=['GET', 'POST'])
+def get_types():
+    if request.method == 'GET':
+        types = DataRepository.read_types()
+        if types is not None:
+            return jsonify(types=types), 200
+        else:
+            return jsonify(message="error"), 404
+    elif request.method == 'POST':
+        gegevens = DataRepository.json_or_formdata(request)
+        DataRepository.create_type()
+        data = DataRepository.create_type(gegevens['product_type'])
+        return jsonify(typeid = data), 201
+
+@app.route('/types/<typeid>/', methods=['GET', 'DELETE', 'PUT'])
+def get_type_by_id(typeid):
+    if request.method == 'GET':
+        producttype = DataRepository.read_type(typeid)
+        if producttype is not None:
+            return jsonify(type=producttype), 200
+        else:
+            return jsonify(message='error'), 404
+    elif request.method == 'DELETE':
+        data = DataRepository.delete_type(typeid)
+        return jsonify(status = data), 200
+    elif request.method == 'PUT':
+        gegevens = DataRepository.json_or_formdata(request)
+        data = DataRepository.update_type(typeid, gegevens['product_type'])
+        if data is not None:
+            if data > 0:
+                return jsonify(typeid = id), 200
+            else:
+                return jsonify(status=data), 200
+        else:
+            return jsonify(message="error"), 404
+
+
 # SOCKET IO
 @socketio.on('connect')
 def initial_connection():
     print('A new client connect')
 
-@socketio.on('F2B_switch_light')
-def switch_light(data):
-    print('licht gaat aan/uit', data)
 
+# *************** HARDWARE ***************
 
 
 # Constant values
@@ -46,14 +145,29 @@ BUTTON_IPS = 17
 BUTTON_SHUTDOWN = 27
 CENTER_JOY = 775
 THRESHOLD_JOY = 200
+THRESHOLD_LIGHT = 850
+
+# LED strip configuratie:
+LED_COUNT = 24       # Aantal LED pixels.
+LED_PIN = 18         # GPIO pin verbonden met de pixels (moet overeenkomen met de gekozen pin).
+LED_FREQ_HZ = 800000 # LED signaal frequentie in hertz (meestal 800kHz)
+LED_DMA = 10         # DMA kanaal om aan te sturen (moet 10 zijn)
+LED_BRIGHTNESS = 255 # Helderheid van de LED's (0-255)
+LED_INVERT = False   # Invert het signaal (True of False)
+LED_CHANNEL = 0      # Kanaal (moet 0 of 1 zijn)
 
 # Initialize objects
 mcp3008 = MCP3008()
 lcd = LCD_Display(RS=LCD_RS_PIN, E=LCD_E_PIN, data_pins=LCD_DATA_PINS)
+strip = PixelStrip(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
+strip.begin()
 
 # Global variables
 joystick_press_count = 0
 is_add = True
+is_open = False
+is_neolight = False
+
 
 def callback_btn_joy(pin):
     global joystick_press_count
@@ -77,7 +191,6 @@ def get_ip_addresses():
     ips = check_output(['hostname', '--all-ip-addresses']).decode('utf-8').strip().split()
     return ips
 
-# Functie om tekst te tonen
 def display_text():
     global is_add
     lcd.send_instruction(0x01)  # Clear display
@@ -86,9 +199,10 @@ def display_text():
     lcd.send_instruction(0xC0)
     if is_add == True:
         lcd.send_text(3*(' ')+'(*)' + 4*' ' + '( )'+3*(' '))
+        # colorWipe(strip, Color(0, 0, 0))
     elif is_add == False:
         lcd.send_text(3*(' ')+'( )' + 4*' ' + '(*)'+3*(' '))
-
+        # colorWipe(strip, Color(0, 0, 0))
 
 def callback_btn_ips(pin):
     ips = get_ip_addresses()
@@ -113,34 +227,88 @@ def callback_btn_shut(pin):
     time.sleep(4)  # Wacht 1 seconde
     display_text()
 
-
-
-def check_joystick_movement(x_pos):
-    """Controleer of de joystick naar links of rechts beweegt."""
-    global is_add
+def check_joystick_hor_movement(x_pos):
+    global is_add, is_neolight
     if x_pos < (CENTER_JOY - THRESHOLD_JOY):
         print('Going Left')
         is_add = True
+        is_neolight = True
         display_text()
+        DataRepository.insert_values_historiek(3, x_pos, 'x-pos: left')
     elif x_pos > (CENTER_JOY + THRESHOLD_JOY):
         print('Going Rigth')
         is_add = False
+        is_neolight = True
         display_text()
+        DataRepository.insert_values_historiek(3, x_pos, 'x-pos: rigth')
     else:
         pass
 
+def check_joystick_ver_movement(y_pos):
+    global is_add
+    if y_pos < (CENTER_JOY - THRESHOLD_JOY):
+        print('Going Up')
+        DataRepository.insert_values_historiek(3, y_pos, 'y_pos: up')
+    elif y_pos > (CENTER_JOY + THRESHOLD_JOY):
+        print('Going Down')
+        DataRepository.insert_values_historiek(3, y_pos, 'y_pos: down')
+    else:
+        pass
+
+def check_lightsensor_activity(light_value):
+    global is_open
+    if light_value < THRESHOLD_LIGHT:
+        if is_open == False:
+            print("Kast is geopend")
+            is_open = True
+            DataRepository.insert_values_historiek(1, light_value, 'opened')
+    elif light_value >= THRESHOLD_LIGHT:
+        if is_open == True:
+            print("Kast is gesloten")
+            is_open = False
+            DataRepository.insert_values_historiek(1, light_value, 'closed')
+
+def colorWipe(strip, color, wait_ms=50):
+    """Wipe color across display a pixel at a time."""
+    for i in range(strip.numPixels()):
+        strip.setPixelColor(i, color)
+        strip.show()
+        time.sleep(wait_ms / 1000.0)
+        
+
+def neopixelring():
+    global is_neolight
+    if is_neolight == True:
+        colorWipe(strip, Color(255, 255, 255))
+        colorWipe(strip, Color(0, 0, 0))
+        is_neolight = False
+
+
+def run_flask():
+    socketio.run(app, debug=False, host='0.0.0.0')
+
+def main_loop():
+    while True:
+        joystick_x_value = mcp3008.read_channel(JOYSTICK_CHANNEL_X)
+        joystick_y_value = mcp3008.read_channel(JOYSTICK_CHANNEL_Y)
+        light_value = mcp3008.read_channel(LIGHT_CHANNEL)
+        check_joystick_hor_movement(joystick_x_value)
+        check_joystick_ver_movement(joystick_y_value)
+        check_lightsensor_activity(light_value)
+        neopixelring()  # Roep de neopixelringfunctie binnen de hoofdlus aan
+        time.sleep(1)
 
 try:
     setup()
     display_text()
     print("**** Starting APP ****")
-    socketio.run(app, debug=False, host='0.0.0.0')
-    while True:
-        joystick_x_value = mcp3008.read_channel(JOYSTICK_CHANNEL_X)
-        joystick_y_value = mcp3008.read_channel(JOYSTICK_CHANNEL_Y)
-        light_value = mcp3008.read_channel(LIGHT_CHANNEL)
-        check_joystick_movement(joystick_x_value)
-        time.sleep(1)
+    flask_thread = threading.Thread(target=run_flask)
+    main_thread = threading.Thread(target=main_loop)
+    # Verwijder de neo_thread omdat de functie in de hoofdlus wordt aangeroepen
+    flask_thread.start()
+    main_thread.start()
+    flask_thread.join()
+    main_thread.join()
 except KeyboardInterrupt:
     print("Program terminated by user.")
 finally:

@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>index</title>
-  <link rel="stylesheet" href="style/screen.css">
+  <link rel="stylesheet" href="style/style.css">
   <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"
     integrity="sha384-c79GN5VsunZvi+Q/WObgk2in0CbZsHnjEqvFxC5DxHn9lTfNce2WW6h2pH6u/kF+"
     crossorigin="anonymous"></script>
@@ -15,13 +15,27 @@
 </head>
 
 <body>
-  <h1>ShelfTracker</h1>
-  <h2>Waarden</h2>
-  <h3>Lichtsensor</h3>
-  <p>Waarde: </p>
-  <h3>Joystick</h3>
-  <p>Richting: </p>
 
 </body>
 
 </html>
+
+<body>
+
+  <h1 class="historiek__title">Historiek</h1>
+
+  <table class="historiek__table">
+    <thead>
+      <tr class="historiek__table-row">
+        <th class="historiek__table-header">Sensor Naam</th>
+        <th class="historiek__table-header">Meting</th>
+        <th class="historiek__table-header">Tijdstip</th>
+        <th class="historiek__table-header">Opmerking</th>
+      </tr>
+    </thead>
+    <tbody class="historiek__table-body">
+      <!-- Rijen worden hier dynamisch toegevoegd -->
+    </tbody>
+  </table>
+  <button class="load-more-btn">Load More</button>
+</body>

@@ -1,6 +1,5 @@
 import time
 from rpi_ws281x import PixelStrip, Color
-
 # LED strip configuratie:
 LED_COUNT = 24       # Aantal LED pixels.
 LED_PIN = 18         # GPIO pin verbonden met de pixels (moet overeenkomen met de gekozen pin).
@@ -24,10 +23,8 @@ def colorWipe(strip, color, wait_ms=50):
 try:
     print('Druk op Ctrl-C om te stoppen')
     while True:
-        # Draai een blauwe kleur door de LED's
         colorWipe(strip, Color(0, 0, 255))
         time.sleep(1)
-        # Draai een groene kleur door de LED's
         colorWipe(strip, Color(0, 255, 0))
         time.sleep(1)
         # Draai een rode kleur door de LED's
