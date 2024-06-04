@@ -325,6 +325,7 @@ def read_barcode():
         is_barcode = True
         line = ser.readline()
         barcode = line.decode().rstrip()
+        DataRepository.insert_values_historiek(2, barcode, "barcode gescant")
         print(f"Received: {str(barcode)}")
         lcd.send_instruction(0x01)  # Clear display
         lcd.send_instruction(0x80)  # Move cursor to the first line
