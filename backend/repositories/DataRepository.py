@@ -103,7 +103,31 @@ class DataRepository:
 # ****************** PRODUCTS ******************
     @staticmethod
     def read_products():
-        sql = "SELECT * FROM Producten"
+        sql = """
+        SELECT 
+            p.*,
+            gmp.minimum_waarde,
+            pt.product_type,
+            max(tijdstip),
+            COALESCE(SUM(ph.product_aantal_wijziging), 0) AS totaal_aantal 
+        FROM 
+            Producten p
+        LEFT JOIN 
+            Producten_Historiek ph
+        ON 
+            p.product_id = ph.product_id 
+        LEFT JOIN
+            Product_Types pt
+        ON
+            pt.type_id = p.product_type
+        LEFT JOIN
+            Gebruiker_Min_Product gmp
+        ON
+            gmp.product_id = p.product_id
+        GROUP BY 
+            p.product_id, 
+            p.product_naam;
+        """
         return Database.get_rows(sql)
     
     @staticmethod
@@ -111,7 +135,6 @@ class DataRepository:
         sql = "SELECT Producten.product_naam FROM Producten where barcode = %s"
         params = [barcode]
         return Database.get_one_row(sql, params)
-
 
     @staticmethod
     def create_product(barcode, productnaam: str, producttypeid: int):

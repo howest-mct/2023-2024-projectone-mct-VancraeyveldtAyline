@@ -25,6 +25,16 @@ def hallo():
     return "Server is running, er zijn momenteel geen API endpoints beschikbaar."
 
 
+# ****************** PRODUCTS ****************** 
+@app.route('/inventory/', methods=['GET'])
+def get_inventory():
+    if request.method == 'GET':
+        inventory = DataRepository.read_products()
+        if inventory is not None:
+            return jsonify(inventory=inventory), 200
+        else:
+            return jsonify(message="error"), 404
+
 # ****************** HISTORIEK ******************   
 @app.route('/historiek/', methods=['GET'])
 def get_historiek():

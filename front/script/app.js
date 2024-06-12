@@ -1,16 +1,14 @@
 const lanIP = `${window.location.hostname}:5000`;
 const socketio = io(`http://${lanIP}`);
 
-const voegRijToe = function (sensorNaam, meting, tijdstip, opmerking) {
-  const tableBody = document.querySelector('.historiek__table-body');
-  const rijHTML = `
-    <tr>
-      <td>${sensorNaam}</td>
-      <td>${meting}</td>
-      <td>${tijdstip}</td>
-      <td>${opmerking}</td>
-    </tr>
-  `;
+const voegRijToe = function (data) {
+  const tableBody = document.querySelector('.myTable');
+  let rijHTML = `<tr>`
+  for (let i of data) {
+    rijHTML += `<td>${i}</td>`
+  }
+  rijHTML += `</tr>`;
+  console.log("workesssss")
   tableBody.insertAdjacentHTML('beforeend', rijHTML);
 };
 
@@ -26,13 +24,14 @@ const listenToSocket = function () {
   // Voeg hier meer socket event listeners toe, indien nodig
 };
 
-const showRecordsHistoriek = function (records) {
+const showInventory = function (inventory) {
   try {
     console.log('test')
-    console.log('Records ontvangen:', records);
-    if (records && records.historiek) {
-      for (let record of records.historiek) {
-        voegRijToe(record.device_naam, record.waarde, record.tijdstip_waarde, record.opmerking);
+    console.log('Records ontvangen:', inventory);
+    if (inventory && inventory.inventory) {
+      for (let product of inventory.inventory) {
+        let data = [product.product_naam, product.product_type, product['max(tijdstip)'], product.totaal_aantal, product.minimum_waarde]
+        voegRijToe(data);
       }
     } else {
       console.error('Ongeldige records data ontvangen:', records);
@@ -42,16 +41,16 @@ const showRecordsHistoriek = function (records) {
   }
 };
 
-const getRecordsHistoriek = function () {
-  const url = `http://${lanIP}/historiek/`;
-  handleData(url, showRecordsHistoriek);
+const getInventory = function () {
+  const url = `http://${lanIP}/inventory/`;
+  handleData(url, showInventory);
 };
 
 const init = function () {
   console.info('DOM geladen');
   listenToUI();
   listenToSocket();
-  getRecordsHistoriek();
+  getInventory();
 };
 
 document.addEventListener('DOMContentLoaded', init);
