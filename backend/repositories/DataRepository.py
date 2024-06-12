@@ -53,8 +53,8 @@ class DataRepository:
         return Database.execute_sql(sql, params)
 
     @staticmethod
-    def read_records_historiek_by_id(id: int):
-        sql = "SELECT * from Historiek WHERE id = %s"
+    def read_records_historiek_by_id(id):
+        sql = "SELECT * from Historiek WHERE device_id = %s"
         params = [id]
         return Database.get_rows(sql, params)
     
@@ -103,15 +103,53 @@ class DataRepository:
 # ****************** PRODUCTS ******************
     @staticmethod
     def read_products():
-        sql = "SELECT * FROM Producten"
+        sql = """
+        SELECT 
+            p.*,
+            gmp.minimum_waarde,
+            pt.product_type,
+            max(tijdstip),
+            COALESCE(SUM(ph.product_aantal_wijziging), 0) AS totaal_aantal 
+        FROM 
+            Producten p
+        LEFT JOIN 
+            Producten_Historiek ph
+        ON 
+            p.product_id = ph.product_id 
+        LEFT JOIN
+            Product_Types pt
+        ON
+            pt.type_id = p.product_type
+        LEFT JOIN
+            Gebruiker_Min_Product gmp
+        ON
+            gmp.product_id = p.product_id
+        GROUP BY 
+            p.product_id, 
+            p.product_naam;
+        """
         return Database.get_rows(sql)
-    
+
+    @staticmethod
+    def read_products_under():
+        sql = """
+        SELECT p.*, pt.product_type, gpm.minimum_waarde, COALESCE(SUM(ph.product_aantal_wijziging), 0) AS totaal_aantal FROM ShelfTracker.Producten p 
+        left join Producten_Historiek ph
+        on p.product_id = ph.product_id 
+        left join Product_Types pt on pt.type_id = p.product_type
+        left join Gebruiker_Min_Product gpm on gpm.product_id = p.product_id
+        GROUP BY 
+        p.product_id, 
+        p.product_naam 
+        HAVING COALESCE(SUM(ph.product_aantal_wijziging), 0) < gpm.minimum_waarde;
+        """
+        return Database.get_rows(sql)
+
     @staticmethod
     def read_product_name_by_barcode(barcode: str):
         sql = "SELECT Producten.product_naam FROM Producten where barcode = %s"
         params = [barcode]
         return Database.get_one_row(sql, params)
-
 
     @staticmethod
     def create_product(barcode, productnaam: str, producttypeid: int):
@@ -149,7 +187,7 @@ class DataRepository:
     
     @staticmethod
     def read_records_product_historiek():
-        sql = "SELECT * from Producten_Historiek"
+        sql = "SELECT ph.*, p.product_naam, pt.product_type from Producten_Historiek ph LEFT JOIN Producten p ON p.product_id = ph.product_id left join Product_Types pt on pt.type_id = p.product_type"
         return Database.get_rows(sql)
     
     @staticmethod

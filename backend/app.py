@@ -25,6 +25,37 @@ def hallo():
     return "Server is running, er zijn momenteel geen API endpoints beschikbaar."
 
 
+# ****************** PRODUCTS ****************** 
+@app.route('/inventory/', methods=['GET'])
+def get_inventory():
+    if request.method == 'GET':
+        inventory = DataRepository.read_products()
+        if inventory is not None:
+            return jsonify(inventory=inventory), 200
+        else:
+            return jsonify(message="error"), 404
+
+@app.route('/product-history/', methods=['GET'])
+def get_product_history():
+    if request.method == 'GET':
+        history = DataRepository.read_records_product_historiek()
+        if history is not None:
+            return jsonify(history=history), 200
+        else:
+            return jsonify(message="error"), 404
+
+@app.route('/cart/', methods=['GET'])
+def get_products_under():
+    if request.method == 'GET':
+        cart = DataRepository.read_products_under()
+        if cart is not None:
+            return jsonify(cart=cart), 200
+        else:
+            return jsonify(message="error"), 404
+
+
+
+
 # ****************** HISTORIEK ******************   
 @app.route('/historiek/', methods=['GET'])
 def get_historiek():
@@ -38,52 +69,11 @@ def get_historiek():
 @app.route('/historiek/<filter>/', methods=['GET'])
 def get_records_device(filter):
     if request.method == 'GET':
-        if isinstance(filter, int):
-            records = DataRepository.read_records_historiek_by_id(filter)
-        elif isinstance(filter, str):
-            records = DataRepository.read_records_historiek_by_date(filter)
+        records = DataRepository.read_records_historiek_by_id(filter)
         if records is not None:
-            return jsonify(trein=records), 200
+            return jsonify(history=records), 200
         else:
             return jsonify(message='error'), 404
-
-
-# ****************** USERS ******************
-@app.route('/users/', methods=['GET', 'POST'])
-def get_users():
-    if request.method == 'GET':
-        users = DataRepository.read_users()
-        if users is not None:
-            return jsonify(users=users), 200
-        else:
-            return jsonify(message="error"), 404
-    elif request.method == 'POST':
-        gegevens = DataRepository.json_or_formdata(request)
-        data = DataRepository.create_user(gegevens['username'], gegevens['email'], gegevens['password'])
-        return jsonify(userid = data), 201
-
-@app.route('/users/<userid>/', methods=['GET', 'DELETE', 'PUT'])
-def get_user_by_id(userid):
-    if request.method == 'GET':
-        user = DataRepository.read_user(userid)
-        if user is not None:
-            return jsonify(user=user), 200
-        else:
-            return jsonify(message='error'), 404
-    elif request.method == 'PUT':
-        gegevens = DataRepository.json_or_formdata(request)
-        data = DataRepository.update_user(userid, gegevens['username'], gegevens['email'], gegevens['password'])
-        if data is not None:
-            if data > 0:
-                return jsonify(userid = id), 200
-            else:
-                return jsonify(status=data), 200
-        else:
-            return jsonify(message="error"), 404
-
-    elif request.method == 'DELETE':
-        data = DataRepository.delete_user(userid)
-        return jsonify(status = data), 200
 
 
 # ****************** TYPES ******************

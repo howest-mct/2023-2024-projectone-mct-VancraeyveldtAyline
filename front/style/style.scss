@@ -1,45 +1,401 @@
-body {
+/*---------------------------------------/*
+ # SETTINGS
+/*---------------------------------------*/
+
+$main-color: #006373;
+$ligthest-gray: #F5F9FA;
+$title-color: #454B4D;
+$text-color: #5C6566;
+$UI-color: #EDF2F2;
+
+
+/*---------------------------------------/*
+ # GENERIC
+/*---------------------------------------*/
+
+* {
+    box-sizing: border-box;
+    scroll-behavior: smooth;
+    text-decoration: none;
+    padding: 0;
+    margin: 0;
+    font-family: "Inter", sans-serif;
+}
+
+/*---------------------------------------/*
+ # ELEMENTS
+/*---------------------------------------*/
+
+h1 {
+    font-size: 36px;
+    line-height: 56px;
+    font-weight: 700;
+    display: inline-block;
+}
+
+p {
+    font-size: 16px;
+    line-height: 24px;
+    display: inline-block;
+}
+
+h2 {
+    font-size: 24px;
+    line-height: 36px;
+    font-weight: 700;
+    display: inline-block;
+    color: $title-color;
+}
+
+h3 {
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 700;
+    display: block;
+    color: $title-color;
+    margin-top: 48px;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+
+    &:hover {
+        color: blueviolet;
+    }
+}
+
+/*---------------------------------------/*
+ # OBJECTS  
+/*---------------------------------------*/
+/* Dropdown Button */
+.food-categories {
+    background-color: $UI-color;
+    font-size: 16px;
+    line-height: 24px;
+    color: $text-color;
+    border: none;
+    height: 32px;
+    padding: 0px 8px;
+    border-radius: 8px;
+}
+
+
+
+
+
+.line-container {
+    width: 504px;
+    position: relative;
+    padding-bottom: 20px;
+    /* Extra ruimte voor de lijn */
     font-family: Arial, sans-serif;
-    margin: 20px;
+    margin-bottom: 48px;
+    padding-bottom: 48px;
 }
 
-.historiek__title {
-    text-align: center;
+.line-container::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 8px;
+    height: 2px;
+    /* De dikte van de lijn */
+    background-color: $UI-color;
+    /* De kleur van de lijn */
 }
 
-.historiek__table {
+
+.margin-right-xs {
+    margin-right: 8px;
+}
+
+/* The switch - the box around the slider */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 24px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* The slider */
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: $text-color;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+/* The circle inside the slider */
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+    background-color: $UI-color;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+/* When the checkbox is checked, change the background color of the slider */
+input:checked+.slider {
+    background-color: $main-color;
+}
+
+/* Move the slider (the circle) when the checkbox is checked */
+input:checked+.slider:before {
+    transform: translateX(24px);
+}
+
+/* Optional: Add a shadow effect to the slider */
+.slider.round {
+    border-radius: 24px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+
+
+
+.row-positive {
+    background-color: #F4FFF2;
+
+    &__number {
+        color: #63CC52;
+    }
+
+    &:hover {
+        background-color: #BEFFB2;
+
+    }
+}
+
+.row-negative {
+    background-color: #FFF2F2;
+
+    &__number {
+        color: #E55C5C;
+    }
+
+    &:hover {
+        background-color: #FFB2B2;
+    }
+}
+
+.great-divide {
+    height: 100vh;
+}
+
+.container {
+    display: flex;
+
+
+    &__align-center {
+        align-items: center;
+    }
+
+    &__main {
+        margin-left: 89px;
+        margin-top: 50px;
+        margin-right: 36px;
+        flex: 1;
+    }
+
+    &__sidebar {
+        width: 295px;
+        background-color: $main-color;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        color: $ligthest-gray;
+
+        &-margins {
+            margin: 36px 0 36px 36px;
+        }
+    }
+
+    &__column {
+        display: flex;
+        flex-direction: column;
+
+        &-item {
+            flex: 1;
+        }
+    }
+
+    &__main-content {
+        display: flex;
+        justify-content: space-between;
+        /* Verdeel items gelijkmatig met ruimte ertussen */
+        align-items: flex-start;
+        /* Zorg dat items bovenaan uitgelijnd zijn */
+
+        &--inventory {
+            /* Voeg hier stijlen toe voor de inventaris */
+        }
+
+        &--profile {
+            color: $title-color;
+        }
+    }
+}
+
+/*---------------------------------------/*
+ # COMPONENTS
+/*---------------------------------------*/
+
+
+
+
+.nav {
+    margin-top: 48px;
+    margin-bottom: 0;
+    list-style-type: none;
+
+    &__item {
+        margin-bottom: 36px;
+        font-size: 16px;
+        line-height: 24px;
+        font-weight: 700;
+
+        &-img {
+            margin-right: 8px;
+        }
+
+        &-current {
+            border-bottom: 1px solid $ligthest-gray;
+        }
+    }
+
+    &__item:last-child {
+        margin-bottom: 0;
+    }
+}
+
+.profile-container {
+    display: flex;
+    align-items: center;
+}
+
+.profile-picture {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-left: 10px;
+}
+
+.profile-picture img {
     width: 100%;
-    border-collapse: collapse;
+    height: 100%;
+    object-fit: cover;
+}
+
+.below-min {
+    box-shadow: inset 3px 0 0 0 #FFB2B2;
+    background-color: #FFF2F2;
+
+    &:hover {
+        background-color: #FFB2B2;
+    }
+
+    &__quantity {
+        color: #E55C5C;
+    }
+}
+
+/*---------------------------------------/*
+ # UTILITIES
+/*---------------------------------------*/
+
+.table-container {
     margin-top: 20px;
 }
 
-.historiek__table,
-.historiek__table-header,
-.historiek__table-cell {
-    border: 1px solid black;
+table {
+    width: 100%;
+    border-collapse: collapse;
+    color: $text-color;
 }
 
-.historiek__table-header,
-.historiek__table-cell {
+th,
+td {
+    // border: 1px solid lightgrey;
     padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: $UI-color;
+    color: $main-color;
+    font-weight: 400;
+}
+
+tr {
+    border-bottom: 1px solid $UI-color;
+}
+
+tr:hover {
+    background-color: $ligthest-gray;
+    /* Verandert de achtergrondkleur bij hover */
+}
+
+td:not(:first-child) {
     text-align: center;
 }
 
-.historiek__table-header {
-    background-color: #f2f2f2;
+th:not(:first-child) {
+    text-align: center;
+}
+
+.filter-container {
+    margin-top: 36px;
+    margin-bottom: 24px;
+}
+
+.search-container {
+
+    margin-right: 24px;
+    display: flex;
+    align-items: center;
+}
+
+.search-bar {
+    padding: 8px;
+    width: 264px;
+    background-color: $UI-color;
+    color: $text-color;
+    border: none;
+    border-radius: 8px;
 }
 
 .load-more-btn {
-    display: block;
-    margin-top: 20px;
-    padding: 10px 20px;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
+    margin-top: 24px;
+    padding: 8px;
+    border-style: none;
+    background-color: $main-color;
+    color: $ligthest-gray;
+    border-radius: 8px;
 
-.load-more-btn:hover {
-    background-color: #0056b3;
+    &:hover {
+        border: 1px solid $main-color;
+        background-color: $UI-color;
+        color: $main-color;
+    }
 }
