@@ -13,6 +13,61 @@ const listenToSocket = function () {
   // Voeg hier meer socket event listeners toe, indien nodig
 };
 
+function listenToDropdown() {
+  document.getElementById('myDropdown').classList.toggle('show');
+  // Close the dropdown menu if the user clicks outside of it
+  window.onclick = function (event) {
+    if (!event.target.matches('.dropbtn')) {
+      var dropdowns = document.getElementsByClassName('dropdown-content');
+      var i;
+      for (i = 0; i < dropdowns.length; i++) {
+        var openDropdown = dropdowns[i];
+        if (openDropdown.classList.contains('show')) {
+          openDropdown.classList.remove('show');
+        }
+      }
+    }
+  };
+}
+
+
+
+function myFunction() {
+  // Declare variables
+  var input, filter, table, tr, td, i, j, txtValue;
+  input = document.querySelector('.search-bar');
+  filter = input.value.toUpperCase();
+  table = document.querySelector('.myTable');
+  tr = table.getElementsByTagName('tr');
+
+  // Loop through all table rows, and hide those who don't match the search query
+  for (i = 0; i < tr.length; i++) {
+    tr[i].style.display = 'none'; // Hide the row initially
+    td = tr[i].getElementsByTagName('td');
+    for (j = 0; j < td.length; j++) {
+      if (td[j]) {
+        txtValue = td[j].textContent || td[j].innerText;
+        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+          tr[i].style.display = '';
+          break; // Break the loop once a match is found
+        }
+      }
+    }
+  }
+}
+
+const listenToSwitch = function() {
+  document.querySelector('.toggleSwitch').addEventListener('change', function () {
+    if (this.checked) {
+      console.log('Switch is ON');
+      // Voeg hier je logica toe voor wanneer de switch aan staat
+    } else {
+      console.log('Switch is OFF');
+      // Voeg hier je logica toe voor wanneer de switch uit staat
+    }
+  });
+}
+
 const voegRijToe = function (data, type) {
   console.log("data:" + data)
   let rijHTML = ``;
@@ -256,6 +311,8 @@ const getCart = function () {
   handleData(url, showCart); 
 }
 
+
+
 const init = function () {
   console.info('DOM geladen');
   inventory_page = document.querySelector('.js-inventory');
@@ -268,8 +325,10 @@ const init = function () {
   listenToSocket();
   if (inventory_page) {
     getInventory();
+    listenToDropdown();
   }
   if (settings_page) {
+    listenToSwitch()
   }
   if (cart_page) {
     getCart()
