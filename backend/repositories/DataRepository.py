@@ -172,7 +172,7 @@ class DataRepository:
     
     @staticmethod
     def read_records_product_historiek():
-        sql = "SELECT * from Producten_Historiek"
+        sql = "SELECT ph.*, p.product_naam, pt.product_type from Producten_Historiek ph LEFT JOIN Producten p ON p.product_id = ph.product_id left join Product_Types pt on pt.type_id = p.product_type"
         return Database.get_rows(sql)
     
     @staticmethod

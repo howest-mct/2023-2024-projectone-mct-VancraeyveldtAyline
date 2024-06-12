@@ -63,7 +63,35 @@ const voegRijToe = function (data, type) {
     rijHTML += `</tr>`;
     tableBody.insertAdjacentHTML('beforeend', rijHTML);
   }
-  
+  if (type == 'prodhis') {
+    const tableBody = document.querySelector('.myTable');
+    if (data[3] < 0) {
+      rijHTML = `<tr class="row-negative">`;
+      for (let i of data) {
+        if (i == data[3]) {
+          rijHTML += `<td class="row-negative__number">${i}</td>`;
+        } else {
+          rijHTML += `<td>${i}</td>`;
+        }
+      }
+    }
+    else {
+      rijHTML = `<tr class="row-positive">`;
+      for (let i of data) {
+        if (i == data[3]) {
+          rijHTML += `<td class="row-positive__number">${i}</td>`;
+        } else {
+          rijHTML += `<td>${i}</td>`;
+        }
+      }
+    }
+
+
+    
+      
+    rijHTML += `</tr>`;
+    tableBody.insertAdjacentHTML('beforeend', rijHTML);
+  }
 };
 
 const showInventory = function (inventory) {
@@ -146,6 +174,27 @@ const showSensorHistoryJoy = function (history) {
   }
 }
 
+const showProductHistory = function (history) {
+  try {
+    console.log('History ontvangen:', history);
+    if (history && history.history) {
+      for (let record of history.history) {
+        let data = [
+          record.product_naam,
+          record.product_type,
+          record.tijdstip, 
+          record.product_aantal_wijziging
+        ];
+        voegRijToe(data, 'prodhis');
+      }
+    } else {
+      console.error('Ongeldige records data ontvangen:', history);
+    }
+  } catch (e) {
+    console.log(e);
+  }
+}
+
 const getInventory = function () {
   const url = `http://${lanIP}/inventory/`;
   handleData(url, showInventory);
@@ -161,6 +210,11 @@ const getSensorHistoryLight = function () {
 const getSensorHistoryJoy = function () {
   const url = `http://${lanIP}/historiek/3/`;
   handleData(url, showSensorHistoryJoy);
+}
+
+const getProductHistory = function () {
+  const url = `http://${lanIP}/product-history/`;
+  handleData(url, showProductHistory); 
 }
 
 const init = function () {
@@ -186,6 +240,7 @@ const init = function () {
     getSensorHistoryJoy();
   }
   if (product_history_page) {
+    getProductHistory();
   }
 };
 

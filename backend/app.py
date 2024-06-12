@@ -35,6 +35,17 @@ def get_inventory():
         else:
             return jsonify(message="error"), 404
 
+@app.route('/product-history/', methods=['GET'])
+def get_product_history():
+    if request.method == 'GET':
+        history = DataRepository.read_records_product_historiek()
+        if history is not None:
+            return jsonify(history=history), 200
+        else:
+            return jsonify(message="error"), 404
+
+
+
 # ****************** HISTORIEK ******************   
 @app.route('/historiek/', methods=['GET'])
 def get_historiek():
@@ -53,44 +64,6 @@ def get_records_device(filter):
             return jsonify(history=records), 200
         else:
             return jsonify(message='error'), 404
-
-
-# ****************** USERS ******************
-@app.route('/users/', methods=['GET', 'POST'])
-def get_users():
-    if request.method == 'GET':
-        users = DataRepository.read_users()
-        if users is not None:
-            return jsonify(users=users), 200
-        else:
-            return jsonify(message="error"), 404
-    elif request.method == 'POST':
-        gegevens = DataRepository.json_or_formdata(request)
-        data = DataRepository.create_user(gegevens['username'], gegevens['email'], gegevens['password'])
-        return jsonify(userid = data), 201
-
-@app.route('/users/<userid>/', methods=['GET', 'DELETE', 'PUT'])
-def get_user_by_id(userid):
-    if request.method == 'GET':
-        user = DataRepository.read_user(userid)
-        if user is not None:
-            return jsonify(user=user), 200
-        else:
-            return jsonify(message='error'), 404
-    elif request.method == 'PUT':
-        gegevens = DataRepository.json_or_formdata(request)
-        data = DataRepository.update_user(userid, gegevens['username'], gegevens['email'], gegevens['password'])
-        if data is not None:
-            if data > 0:
-                return jsonify(userid = id), 200
-            else:
-                return jsonify(status=data), 200
-        else:
-            return jsonify(message="error"), 404
-
-    elif request.method == 'DELETE':
-        data = DataRepository.delete_user(userid)
-        return jsonify(status = data), 200
 
 
 # ****************** TYPES ******************
