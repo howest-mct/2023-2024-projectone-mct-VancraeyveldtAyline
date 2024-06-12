@@ -129,7 +129,22 @@ class DataRepository:
             p.product_naam;
         """
         return Database.get_rows(sql)
-    
+
+    @staticmethod
+    def read_products_under():
+        sql = """
+        SELECT p.*, pt.product_type, gpm.minimum_waarde, COALESCE(SUM(ph.product_aantal_wijziging), 0) AS totaal_aantal FROM ShelfTracker.Producten p 
+        left join Producten_Historiek ph
+        on p.product_id = ph.product_id 
+        left join Product_Types pt on pt.type_id = p.product_type
+        left join Gebruiker_Min_Product gpm on gpm.product_id = p.product_id
+        GROUP BY 
+        p.product_id, 
+        p.product_naam 
+        HAVING COALESCE(SUM(ph.product_aantal_wijziging), 0) < gpm.minimum_waarde;
+        """
+        return Database.get_rows(sql)
+
     @staticmethod
     def read_product_name_by_barcode(barcode: str):
         sql = "SELECT Producten.product_naam FROM Producten where barcode = %s"

@@ -14,6 +14,7 @@ const listenToSocket = function () {
 };
 
 const voegRijToe = function (data, type) {
+  console.log("data:" + data)
   let rijHTML = ``;
   if (type == 'inv') {
     const tableBody = document.querySelector('.myTable');
@@ -85,12 +86,19 @@ const voegRijToe = function (data, type) {
         }
       }
     }
-
-
-    
-      
     rijHTML += `</tr>`;
     tableBody.insertAdjacentHTML('beforeend', rijHTML);
+  }
+  if (type == 'cart') {
+    const tableBody = document.querySelector('.myTable');
+      rijHTML = `<tr>`;
+      for (let i of data) {
+        rijHTML += `<td>${i}</td>`;
+      }
+    rijHTML += `</tr>`;
+    tableBody.insertAdjacentHTML('beforeend', rijHTML);
+    
+    
   }
 };
 
@@ -195,6 +203,34 @@ const showProductHistory = function (history) {
   }
 }
 
+const showCart = function (cart) {
+  try {
+    console.log('Cart ontvangen:', cart);
+    if (cart && cart.cart) {
+      for (let item of cart.cart) {
+        let data = [
+          item.product_naam,
+          item.product_type,
+          item.totaal_aantal
+        ];
+        voegRijToe(data, 'cart');
+      }
+      console.log("data= "+ cart.cart)
+      console.log(cart.cart.length)
+      if (cart.cart.length == 0) {
+        console.log("WORKS")
+        data = ["---", "---", "---"]
+        voegRijToe(data, "cart")
+      }
+    } else {
+      console.error('Ongeldige records data ontvangen:', cart);
+    }
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+
 const getInventory = function () {
   const url = `http://${lanIP}/inventory/`;
   handleData(url, showInventory);
@@ -211,10 +247,13 @@ const getSensorHistoryJoy = function () {
   const url = `http://${lanIP}/historiek/3/`;
   handleData(url, showSensorHistoryJoy);
 }
-
 const getProductHistory = function () {
   const url = `http://${lanIP}/product-history/`;
   handleData(url, showProductHistory); 
+}
+const getCart = function () {
+  const url = `http://${lanIP}/cart/`;
+  handleData(url, showCart); 
 }
 
 const init = function () {
@@ -233,6 +272,7 @@ const init = function () {
   if (settings_page) {
   }
   if (cart_page) {
+    getCart()
   }
   if (sensor_history_page) {
     getSensorHistoryBarcode();

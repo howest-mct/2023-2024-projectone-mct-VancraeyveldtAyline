@@ -44,6 +44,16 @@ def get_product_history():
         else:
             return jsonify(message="error"), 404
 
+@app.route('/cart/', methods=['GET'])
+def get_products_under():
+    if request.method == 'GET':
+        cart = DataRepository.read_products_under()
+        if cart is not None:
+            return jsonify(cart=cart), 200
+        else:
+            return jsonify(message="error"), 404
+
+
 
 
 # ****************** HISTORIEK ******************   
