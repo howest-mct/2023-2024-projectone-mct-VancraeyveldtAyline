@@ -48,12 +48,9 @@ def get_historiek():
 @app.route('/historiek/<filter>/', methods=['GET'])
 def get_records_device(filter):
     if request.method == 'GET':
-        if isinstance(filter, int):
-            records = DataRepository.read_records_historiek_by_id(filter)
-        elif isinstance(filter, str):
-            records = DataRepository.read_records_historiek_by_date(filter)
+        records = DataRepository.read_records_historiek_by_id(filter)
         if records is not None:
-            return jsonify(trein=records), 200
+            return jsonify(history=records), 200
         else:
             return jsonify(message='error'), 404
 

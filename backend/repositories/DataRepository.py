@@ -53,8 +53,8 @@ class DataRepository:
         return Database.execute_sql(sql, params)
 
     @staticmethod
-    def read_records_historiek_by_id(id: int):
-        sql = "SELECT * from Historiek WHERE id = %s"
+    def read_records_historiek_by_id(id):
+        sql = "SELECT * from Historiek WHERE device_id = %s"
         params = [id]
         return Database.get_rows(sql, params)
     
