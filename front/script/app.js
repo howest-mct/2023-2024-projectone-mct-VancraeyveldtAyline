@@ -10,7 +10,33 @@ const listenToSocket = function () {
     console.log('Verbonden met socket webserver');
   });
 
-  // Voeg hier meer socket event listeners toe, indien nodig
+  socketio.on('B2F_door', function (status) {
+    if (status.status == 0) {
+      const door_icon = document.querySelector(".door")
+      let iconHTML = `
+      <div class="door">
+        <img src="Icons/door_front_24dp_FILL0_wght400_GRAD0_opsz24 1.svg" alt="closed door icon" class="door__img">
+      </div>
+      `
+      door_icon.outerHTML = iconHTML
+    }
+    else {
+      const door_icon = document.querySelector(".door")
+      let iconHTML = `
+      <div class="door">
+        <img src="Icons/door_open_24dp_FILL0_wght400_GRAD0_opsz24 1.svg" " alt="closed door icon" class="door__img">
+      </div>
+      `
+      door_icon.outerHTML = iconHTML
+    }
+  })
+
+  socketio.on("B2F_reload", function (status) {
+    location.reload();
+  })
+  socketio.on("B2F_buzzer", function (status) {
+    
+  })
 };
 
 function listenToDropdown() {
@@ -29,8 +55,6 @@ function listenToDropdown() {
     }
   };
 }
-
-
 
 function myFunction() {
   // Declare variables
@@ -61,8 +85,10 @@ const listenToSwitch = function() {
     if (this.checked) {
       console.log('Switch is ON');
       // Voeg hier je logica toe voor wanneer de switch aan staat
+      socketio.emit("F2B_buzzer", {"status":1})
     } else {
       console.log('Switch is OFF');
+      socketio.emit("F2B_buzzer", {"status":0})
       // Voeg hier je logica toe voor wanneer de switch uit staat
     }
   });
