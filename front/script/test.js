@@ -54,12 +54,31 @@ const voegRijToe = function (data, type) {
     
     else if (type === 'prodhis') {
       tableBody = document.querySelector('.myTable');
-      rijHTML = data[3] < 0 ? `<tr class="row-negative">` : `<tr class="row-positive">`;
-      for (let i of data) {
-        rijHTML += (i == data[3]) ? `<td class="${data[3] < 0 ? 'row-negative__number' : 'row-positive__number'}">${i}</td>` : `<td>${i}</td>`;
+      if (data[3] < 0) {
+        rijHTML = `<tr class="row-negative">`;
+        for (let i of data) {
+          if (i == data[3]) {
+            rijHTML += `<td class="row-negative__number">${i}</td>`;
+          } else {
+            rijHTML += `<td>${i}</td>`;
+          }
+        }
+      }
+      else {
+        rijHTML = `<tr class="row-positive">`;
+        for (let i of data) {
+          if (i == data[3]) {
+            rijHTML += `<td class="row-positive__number">${i}</td>`;
+          } else {
+            rijHTML += `<td>${i}</td>`;
+          }
+        }
       }
       rijHTML += `</tr>`;
-    } else if (type === 'cart') {
+      tableBody.insertAdjacentHTML('beforeend', rijHTML);
+    } 
+    
+    else if (type === 'cart') {
       tableBody = document.querySelector('.myTable');
       rijHTML = `<tr>`;
       for (let i of data) {

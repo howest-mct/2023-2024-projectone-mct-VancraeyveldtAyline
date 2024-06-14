@@ -195,7 +195,7 @@ def callback_btn_joy(pin):
         is_barcode = False
         is_neolight = True
         display_text()
-        socketio.emit("B2F_reload", {"status":1})
+        # socketio.emit("B2F_reload", {"status":1})
 
 def setup():
     lcd.send_instruction(0x38)  # Initialize LCD in 8-bit mode, 2 lines, 5x7 characters
@@ -249,11 +249,12 @@ def check_joystick_movement(x_pos, y_pos):
             # print('Going Left')
             # is_neolight = True
             DataRepository.insert_values_historiek(3, x_pos, 'x-pos: left')
-            socketio.emit("B2F_reload", {"status":1})
+            # socketio.emit("B2F_reload", {"status":1})
+            socketio.emit("B2F_xpos_left", {"pos": x_pos})
         elif (x_pos > (CENTER_JOY + THRESHOLD_JOY)):
             # print('Going Rigth')
             # is_neolight = True
-            DataRepository.insert_values_historiek(3, x_pos, 'x-pos: rigth')
+            DataRepository.insert_values_historiek(3, x_pos, 'x-pos: right')
             socketio.emit("B2F_reload", {"status":1})
     else:
         while is_barcode == True:

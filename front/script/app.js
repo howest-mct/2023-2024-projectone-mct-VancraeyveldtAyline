@@ -47,6 +47,9 @@ const listenToSocket = function () {
   socketio.on("B2F_buzzer", function (status) {
     // TO-DO: buzzer logica instellen: is_buzzer = false
   })
+  socketio.on("B2F_xpos_left", function (object) {
+    console.log(object)
+  })
 };
 
 function listenToDropdown() {
@@ -100,65 +103,61 @@ const listenToSwitch = function() {
 };
 
 const voegRijToe = function (data, type) {
-  console.log("data:" + data)
+  // console.log("data:", data);
   let rijHTML = ``;
+  let tableBody;
 
-
-  if (type == 'inv') {
-    const tableBody = document.querySelector('.myTable');
-      if (data[3] < data[4]) {
-        rijHTML += `<tr class="below-min">`;
-        for (let i of data) {
+  if (type === 'inv') {
+    tableBody = document.querySelector('.myTable');
+    if (data[3] < data[4]) {
+      rijHTML += `<tr class="below-min">`;
+      for (let i of data) {
           if (i == data[3]) {
-            rijHTML += `<td class="below-min__quantity">${i}</td>`;
-          } else {
-            rijHTML += `<td>${i}</td>`;
-          }
-        }
-        rijHTML += `</tr>`;
-      } else {
-        rijHTML = `<tr>`;
-        for (let i of data) {
-          rijHTML += `<td>${i}</td>`;
-        }
-        rijHTML += `</tr>`;
+              rijHTML += `<td class="below-min__quantity">${i}</td>`;
+            } 
+          else {
+              rijHTML += `<td>${i}</td>`;
+            }
       }
+      rijHTML += `</tr>`;
+    } else {
+      rijHTML = `<tr>`;
+      for (let i of data) {
+        rijHTML += `<td>${i}</td>`;
+      }
+      rijHTML += `</tr>`;
     }
-    tableBody.insertAdjacentHTML('beforeend', rijHTML);
-  if (type == 'his1') {
-    const tableBody = document.querySelector('.myTable1');
-    rijHTML += `<tr>`;
-      for (let i of data) {
-        rijHTML += `<td>${i}</td>`;
-      }
-    rijHTML += `</tr>`;
-    tableBody.insertAdjacentHTML('beforeend', rijHTML);
-  }
-
-
-
-  if (type == 'his2') {
-    const tableBody = document.querySelector('.myTable2');
-    rijHTML = `<tr>`;
-      for (let i of data) {
-        rijHTML += `<td>${i}</td>`;
-      }
-    rijHTML += `</tr>`;
-    tableBody.insertAdjacentHTML('beforeend', rijHTML);
-  }
-
+  } 
   
-  if (type == 'his3') {
-    const tableBody = document.querySelector('.myTable3');
-    rijHTML = `<tr>`;
-      for (let i of data) {
-        rijHTML += `<td>${i}</td>`;
-      }
+  else if (type === 'his1') {
+    tableBody = document.querySelector('.myTable1');
+    rijHTML += `<tr>`;
+    for (let i of data) {
+      rijHTML += `<td>${i}</td>`;
+    }
     rijHTML += `</tr>`;
-    tableBody.insertAdjacentHTML('beforeend', rijHTML);
-  }
-  if (type == 'prodhis') {
-    const tableBody = document.querySelector('.myTable');
+  } 
+  
+  else if (type === 'his2') {
+    tableBody = document.querySelector('.myTable2');
+    rijHTML = `<tr>`;
+    for (let i of data) {
+      rijHTML += `<td>${i}</td>`;
+    }
+    rijHTML += `</tr>`;
+  } 
+  
+  else if (type === 'his3') {
+    tableBody = document.querySelector('.myTable3');
+    rijHTML = `<tr>`;
+    for (let i of data) {
+      rijHTML += `<td>${i}</td>`;
+    }
+    rijHTML += `</tr>`;
+  } 
+  
+  else if (type === 'prodhis') {
+    tableBody = document.querySelector('.myTable');
     if (data[3] < 0) {
       rijHTML = `<tr class="row-negative">`;
       for (let i of data) {
@@ -181,19 +180,22 @@ const voegRijToe = function (data, type) {
     }
     rijHTML += `</tr>`;
     tableBody.insertAdjacentHTML('beforeend', rijHTML);
-  }
-  if (type == 'cart') {
-    const tableBody = document.querySelector('.myTable');
-      rijHTML = `<tr>`;
-      for (let i of data) {
-        rijHTML += `<td>${i}</td>`;
-      }
+  } 
+  
+  else if (type === 'cart') {
+    tableBody = document.querySelector('.myTable');
+    rijHTML = `<tr>`;
+    for (let i of data) {
+      rijHTML += `<td>${i}</td>`;
+    }
     rijHTML += `</tr>`;
-    tableBody.insertAdjacentHTML('beforeend', rijHTML);
-    
-    
   }
-;
+
+  if (tableBody) {
+    tableBody.insertAdjacentHTML('beforeend', rijHTML);
+  }
+};
+
 
 const showInventory = function (inventory) {
   try {
@@ -220,18 +222,25 @@ const showInventory = function (inventory) {
 
 const showSensorHistoryBarcode = function (history) {
   try {
+    let alldata = [] 
     console.log('History ontvangen:', history);
     if (history && history.history) {
-      for (let o = 0; o < length; o++) {
+      console.log("izufhizufh^zuhz^fuih")
+        console.log("555555555555555")
         for (let record of history.history) {
+
           let data = [
             record.waarde,
             record.tijdstip_waarde,
             record.opmerking
           ];
-          voegRijToe(data, 'his1');
+          alldata.push(data)
+          // voegRijToe(data, 'his1');
         }
-      }
+        for (let i = 0; i < 5; i++) {
+          console.log("yo")
+          voegRijToe(alldata[i], 'his1');
+        }
       }
        else {
       console.error('Ongeldige records data ontvangen:', history);
@@ -312,8 +321,8 @@ const showCart = function (cart) {
         ];
         voegRijToe(data, 'cart');
       }
-      console.log("data= "+ cart.cart)
-      console.log(cart.cart.length)
+      // console.log("data= "+ cart.cart)
+      // console.log(cart.cart.length)
       if (cart.cart.length == 0) {
         console.log("WORKS")
         data = ["---", "---", "---"]
