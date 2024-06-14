@@ -1,16 +1,18 @@
 const lanIP = `${window.location.hostname}:5000`;
 const socketio = io(`http://${lanIP}`);
 
-let amount_to_be_loaded
+let rows_to_be_loaded = 5
 
 
 const listenToUI = function () {
-  loadMoreBtn = document.querySelector('load-more-btn');
-  loadMoreBtn.addEventListener('click', function() {
-
-    alert('Button was clicked!');
-  })
-
+  const loadMoreBtn = document.querySelector('.load-more-btn');
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', function () {
+      console.log('Button was clicked!');
+    });
+  } else {
+    console.error('Button not found!');
+  }
 };
 
 const listenToSocket = function () {
@@ -19,43 +21,41 @@ const listenToSocket = function () {
   });
 
   socketio.on('B2F_door', function (status) {
+    const door_icon = document.querySelector(".door");
+    let iconHTML;
     if (status.status == 0) {
-      const door_icon = document.querySelector(".door")
-      let iconHTML = `
-      <div class="door">
-        <img src="Icons/door_front_24dp_FILL0_wght400_GRAD0_opsz24 1.svg" alt="closed door icon" class="door__img">
-      </div>
-      `
-      door_icon.outerHTML = iconHTML
+      iconHTML = `
+        <div class="door">
+          <img src="Icons/door_front_24dp_FILL0_wght400_GRAD0_opsz24 1.svg" alt="closed door icon" class="door__img">
+        </div>
+      `;
+    } else {
+      iconHTML = `
+        <div class="door">
+          <img src="Icons/door_open_24dp_FILL0_wght400_GRAD0_opsz24 1.svg" alt="open door icon" class="door__img">
+        </div>
+      `;
     }
-    else {
-      const door_icon = document.querySelector(".door")
-      let iconHTML = `
-      <div class="door">
-        <img src="Icons/door_open_24dp_FILL0_wght400_GRAD0_opsz24 1.svg" " alt="closed door icon" class="door__img">
-      </div>
-      `
-      door_icon.outerHTML = iconHTML
+    if (door_icon) {
+      door_icon.outerHTML = iconHTML;
     }
-  })
+  });
 
   socketio.on("B2F_reload", function (status) {
     location.reload();
   })
   socketio.on("B2F_buzzer", function (status) {
-    
+    // TO-DO: buzzer logica instellen: is_buzzer = false
   })
 };
 
 function listenToDropdown() {
   document.getElementById('myDropdown').classList.toggle('show');
-  // Close the dropdown menu if the user clicks outside of it
   window.onclick = function (event) {
     if (!event.target.matches('.dropbtn')) {
-      var dropdowns = document.getElementsByClassName('dropdown-content');
-      var i;
-      for (i = 0; i < dropdowns.length; i++) {
-        var openDropdown = dropdowns[i];
+      const dropdowns = document.getElementsByClassName('dropdown-content');
+      for (let i = 0; i < dropdowns.length; i++) {
+        const openDropdown = dropdowns[i];
         if (openDropdown.classList.contains('show')) {
           openDropdown.classList.remove('show');
         }
@@ -65,76 +65,78 @@ function listenToDropdown() {
 }
 
 function myFunction() {
-  // Declare variables
-  var input, filter, table, tr, td, i, j, txtValue;
-  input = document.querySelector('.search-bar');
-  filter = input.value.toUpperCase();
-  table = document.querySelector('.myTable');
-  tr = table.getElementsByTagName('tr');
+  const input = document.querySelector('.search-bar');
+  const filter = input.value.toUpperCase();
+  const table = document.querySelector('.myTable');
+  const tr = table.getElementsByTagName('tr');
 
-  // Loop through all table rows, and hide those who don't match the search query
-  for (i = 0; i < tr.length; i++) {
-    tr[i].style.display = 'none'; // Hide the row initially
-    td = tr[i].getElementsByTagName('td');
-    for (j = 0; j < td.length; j++) {
+  for (let i = 0; i < tr.length; i++) {
+    tr[i].style.display = 'none';
+    const td = tr[i].getElementsByTagName('td');
+    for (let j = 0; j < td.length; j++) {
       if (td[j]) {
-        txtValue = td[j].textContent || td[j].innerText;
+        const txtValue = td[j].textContent || td[j].innerText;
         if (txtValue.toUpperCase().indexOf(filter) > -1) {
           tr[i].style.display = '';
-          break; // Break the loop once a match is found
+          break;
         }
       }
     }
   }
 }
-
 const listenToSwitch = function() {
-  document.querySelector('.toggleSwitch').addEventListener('change', function () {
-    if (this.checked) {
-      console.log('Switch is ON');
-      // Voeg hier je logica toe voor wanneer de switch aan staat
-      socketio.emit("F2B_buzzer", {"status":1})
-    } else {
-      console.log('Switch is OFF');
-      socketio.emit("F2B_buzzer", {"status":0})
-      // Voeg hier je logica toe voor wanneer de switch uit staat
-    }
-  });
-}
+  const toggleSwitch = document.querySelector('.toggleSwitch');
+  if (toggleSwitch) {
+    toggleSwitch.addEventListener('change', function () {
+      if (this.checked) {
+        console.log('Switch is ON');
+        socketio.emit("F2B_buzzer", {"status":1});
+      } else {
+        console.log('Switch is OFF');
+        socketio.emit("F2B_buzzer", {"status":0});
+      }
+    });
+  }
+};
 
 const voegRijToe = function (data, type) {
   console.log("data:" + data)
   let rijHTML = ``;
+
+
   if (type == 'inv') {
     const tableBody = document.querySelector('.myTable');
-    if (data[3] < data[4]) {
-      rijHTML += `<tr class="below-min">`;
-      for (let i of data) {
-        if (i == data[3]) {
-          rijHTML += `<td class="below-min__quantity">${i}</td>`;
-        } else {
+      if (data[3] < data[4]) {
+        rijHTML += `<tr class="below-min">`;
+        for (let i of data) {
+          if (i == data[3]) {
+            rijHTML += `<td class="below-min__quantity">${i}</td>`;
+          } else {
+            rijHTML += `<td>${i}</td>`;
+          }
+        }
+        rijHTML += `</tr>`;
+      } else {
+        rijHTML = `<tr>`;
+        for (let i of data) {
           rijHTML += `<td>${i}</td>`;
         }
+        rijHTML += `</tr>`;
       }
-      rijHTML += `</tr>`;
-    } else {
-      rijHTML = `<tr>`;
-      for (let i of data) {
-        rijHTML += `<td>${i}</td>`;
-      }
-      rijHTML += `</tr>`;
     }
     tableBody.insertAdjacentHTML('beforeend', rijHTML);
-  }
   if (type == 'his1') {
     const tableBody = document.querySelector('.myTable1');
-    rijHTML = `<tr>`;
+    rijHTML += `<tr>`;
       for (let i of data) {
         rijHTML += `<td>${i}</td>`;
       }
     rijHTML += `</tr>`;
     tableBody.insertAdjacentHTML('beforeend', rijHTML);
   }
+
+
+
   if (type == 'his2') {
     const tableBody = document.querySelector('.myTable2');
     rijHTML = `<tr>`;
@@ -144,6 +146,8 @@ const voegRijToe = function (data, type) {
     rijHTML += `</tr>`;
     tableBody.insertAdjacentHTML('beforeend', rijHTML);
   }
+
+  
   if (type == 'his3') {
     const tableBody = document.querySelector('.myTable3');
     rijHTML = `<tr>`;
@@ -189,7 +193,7 @@ const voegRijToe = function (data, type) {
     
     
   }
-};
+;
 
 const showInventory = function (inventory) {
   try {
@@ -203,6 +207,7 @@ const showInventory = function (inventory) {
           product.totaal_aantal,
           product.minimum_waarde,
         ];
+        console.log('works2')
         voegRijToe(data, 'inv');
       }
     } else {
@@ -217,15 +222,18 @@ const showSensorHistoryBarcode = function (history) {
   try {
     console.log('History ontvangen:', history);
     if (history && history.history) {
-      for (let record of history.history) {
-        let data = [
-          record.waarde,
-          record.tijdstip_waarde,
-          record.opmerking
-        ];
-        voegRijToe(data, 'his1');
+      for (let o = 0; o < length; o++) {
+        for (let record of history.history) {
+          let data = [
+            record.waarde,
+            record.tijdstip_waarde,
+            record.opmerking
+          ];
+          voegRijToe(data, 'his1');
+        }
       }
-    } else {
+      }
+       else {
       console.error('Ongeldige records data ontvangen:', history);
     }
   } catch (e) {
@@ -323,9 +331,10 @@ const showCart = function (cart) {
 const getInventory = function () {
   const url = `http://${lanIP}/inventory/`;
   handleData(url, showInventory);
+  console.log('works1')
 };
 const getSensorHistoryBarcode = function () {
-  const url = `http://${lanIP}/historiek/2/5/`;
+  const url = `http://${lanIP}/historiek/2/`;
   handleData(url, showSensorHistoryBarcode);
 }
 const getSensorHistoryLight = function () {
