@@ -1,8 +1,16 @@
 const lanIP = `${window.location.hostname}:5000`;
 const socketio = io(`http://${lanIP}`);
 
+let amount_to_be_loaded
+
+
 const listenToUI = function () {
   loadMoreBtn = document.querySelector('load-more-btn');
+  loadMoreBtn.addEventListener('click', function() {
+
+    alert('Button was clicked!');
+  })
+
 };
 
 const listenToSocket = function () {
@@ -317,7 +325,7 @@ const getInventory = function () {
   handleData(url, showInventory);
 };
 const getSensorHistoryBarcode = function () {
-  const url = `http://${lanIP}/historiek/2/`;
+  const url = `http://${lanIP}/historiek/2/5/`;
   handleData(url, showSensorHistoryBarcode);
 }
 const getSensorHistoryLight = function () {

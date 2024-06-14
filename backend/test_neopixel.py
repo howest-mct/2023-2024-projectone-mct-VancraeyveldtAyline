@@ -9,6 +9,11 @@ LED_BRIGHTNESS = 255 # Helderheid van de LED's (0-255)
 LED_INVERT = False   # Invert het signaal (True of False)
 LED_CHANNEL = 0      # Kanaal (moet 0 of 1 zijn)
 
+
+
+
+
+
 # Initialiseer de LED strip
 strip = PixelStrip(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
 strip.begin()
@@ -20,17 +25,35 @@ def colorWipe(strip, color, wait_ms=50):
         strip.show()
         time.sleep(wait_ms / 1000.0)
 
+
+# Functie om de LED's op een bepaalde kleur te zetten
+def set_color(strip, color):
+    for i in range(strip.numPixels()):
+        strip.setPixelColor(i, color)
+    strip.show()
+
 try:
     print('Druk op Ctrl-C om te stoppen')
     while True:
-        colorWipe(strip, Color(0, 0, 255))
-        time.sleep(1)
-        colorWipe(strip, Color(0, 255, 0))
-        time.sleep(1)
-        # Draai een rode kleur door de LED's
-        colorWipe(strip, Color(255, 0, 0))
-        time.sleep(1)
+        # colorWipe(strip, Color(0, 0, 255))
+        # time.sleep(1)
+        # colorWipe(strip, Color(0, 255, 0))
+        # time.sleep(1)
+        # # Draai een rode kleur door de LED's
+        # colorWipe(strip, Color(255, 0, 0))
+        # time.sleep(1)
+        set_color(strip, Color(0, 0, 255))
+        time.sleep(10)
 
 except KeyboardInterrupt:
     # Clear de LED strip bij het afsluiten
     colorWipe(strip, Color(0, 0, 0), 10)
+
+
+
+
+
+# Zet de kleur op blauw (RGB: 0, 0, 255)
+
+
+# Houd de kleur een tijdje vast

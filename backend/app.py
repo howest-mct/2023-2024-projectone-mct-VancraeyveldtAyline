@@ -178,9 +178,8 @@ is_barcode = False
 current_number = 1
 barcode = ''
 
-
 def callback_btn_joy(pin):
-    global joystick_press_count, is_barcode, current_number, barcode
+    global joystick_press_count, is_barcode, current_number, barcode, is_buzzer
     joystick_press_count += 1
     print(f"The joystick has been pressed {joystick_press_count} times!")
     if is_barcode == True:
@@ -188,6 +187,10 @@ def callback_btn_joy(pin):
         lcd.send_instruction(0x01)  # Clear display
         lcd.send_instruction(0x80)
         lcd.send_text("Succes!")
+        if is_buzzer == 1:
+            GPIO.output(BUZZER_PIN, GPIO.HIGH)
+            time.sleep(0.1)
+            GPIO.output(BUZZER_PIN, GPIO.LOW)
         time.sleep(1)
         is_barcode = False
         display_text()
@@ -252,22 +255,27 @@ def check_joystick_movement(x_pos, y_pos):
             DataRepository.insert_values_historiek(3, x_pos, 'x-pos: rigth')
             socketio.emit("B2F_reload", {"status":1})
     else:
-        if (y_pos < (CENTER_JOY - THRESHOLD_JOY)):
-            print('Going Up')
-            if is_barcode == True:
+        while is_barcode == True:
+            x_pos = mcp3008.read_channel(JOYSTICK_CHANNEL_X)
+            y_pos = mcp3008.read_channel(JOYSTICK_CHANNEL_Y)
+            if (y_pos < (CENTER_JOY - THRESHOLD_JOY)):
+                print('Going Up')
                 if current_number < MAX_NUMBER_LCD:
                     current_number += 1
+                    is_neolight = True
                     display_number(current_number)
-            DataRepository.insert_values_historiek(3, y_pos, 'y_pos: up')
-            socketio.emit("B2F_reload", {"status":1})
-        elif (y_pos > (CENTER_JOY + THRESHOLD_JOY)):
-            print('Going Down')
-            if is_barcode == True:
+                    time.sleep(0.2)
+                DataRepository.insert_values_historiek(3, y_pos, 'y_pos: up')
+                socketio.emit("B2F_reload", {"status":1})
+            elif (y_pos > (CENTER_JOY + THRESHOLD_JOY)):
+                print('Going Down')
                 if current_number > MIN_NUMBER_LCD:
                     current_number -= 1
+                    is_neolight = True
                     display_number(current_number)
-            DataRepository.insert_values_historiek(3, y_pos, 'y_pos: down')
-            socketio.emit("B2F_reload", {"status":1})
+                    time.sleep(0.2)
+                DataRepository.insert_values_historiek(3, y_pos, 'y_pos: down')
+                socketio.emit("B2F_reload", {"status":1})
 
 def check_lightsensor_activity(light_value):
     global is_open
@@ -288,11 +296,17 @@ def colorWipe(strip, color, wait_ms=50):
         strip.setPixelColor(i, color)
         strip.show()
         time.sleep(wait_ms / 1000.0)
-        
+
+def set_color(strip, color):
+    for i in range(strip.numPixels()):
+        strip.setPixelColor(i, color)
+    strip.show()
+
 def neopixelring():
     global is_neolight
     if is_neolight == True:
-        colorWipe(strip, Color(255, 255, 255))
+        set_color(strip, Color(0, 0, 255))
+        time.sleep(0.5)
         colorWipe(strip, Color(0, 0, 0))
         is_neolight = False
 
@@ -304,24 +318,28 @@ def display_number(number):
 def read_barcode():
     global current_number, is_barcode, barcode
     if ser.in_waiting > 0:
-        is_barcode = True
         line = ser.readline()
         barcode = line.decode().rstrip()
         DataRepository.insert_values_historiek(2, barcode, "barcode gescant")
         print(f"Received: {str(barcode)}")
         lcd.send_instruction(0x01)  # Clear display
         lcd.send_instruction(0x80)  # Move cursor to the first line
-        product_name_object = DataRepository.read_product_name_by_barcode(barcode)
-        product_name = product_name_object['product_naam']
-        print(product_name)
-        lcd.send_text(product_name)
-        lcd.send_instruction(0xC0)
-        current_number = 1
-        display_number(current_number)
-        
-        
 
-        # DataRepository.insert_values_product_historiek(-2, line.decode().rstrip())
+        if DataRepository.read_product_name_by_barcode(barcode) == None:
+            print('not found')
+            lcd.send_text('not found')
+            time.sleep(3)
+            display_text()
+        else:
+            is_barcode = True
+            product_name_object = DataRepository.read_product_name_by_barcode(barcode)
+            product_name = product_name_object['product_naam']
+            print(product_name)
+            lcd.send_text(product_name)
+            time.sleep(3)
+            lcd.send_instruction(0xC0)
+            current_number = 1
+            display_number(current_number)
     time.sleep(0.1)
         
 def run_flask():

@@ -53,9 +53,9 @@ class DataRepository:
         return Database.execute_sql(sql, params)
 
     @staticmethod
-    def read_records_historiek_by_id(id):
-        sql = "SELECT * from Historiek WHERE device_id = %s"
-        params = [id]
+    def read_records_historiek_by_id(id, amount=5):
+        sql = "SELECT * from Historiek WHERE device_id = %s Order by tijdstip_waarde desc LIMIT %s;"
+        params = [id, amount]
         return Database.get_rows(sql, params)
     
     @staticmethod
@@ -127,6 +127,13 @@ class DataRepository:
         GROUP BY 
             p.product_id, 
             p.product_naam;
+        """
+        return Database.get_rows(sql)
+    
+    @staticmethod
+    def read_product_barcodes():
+        sql = """
+        SELECT barcode FROM Producten;
         """
         return Database.get_rows(sql)
 
