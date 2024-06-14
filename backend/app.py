@@ -179,7 +179,7 @@ current_number = 1
 barcode = ''
 
 def callback_btn_joy(pin):
-    global joystick_press_count, is_barcode, current_number, barcode, is_buzzer
+    global joystick_press_count, is_barcode, current_number, barcode, is_buzzer, is_neolight
     joystick_press_count += 1
     print(f"The joystick has been pressed {joystick_press_count} times!")
     if is_barcode == True:
@@ -193,6 +193,7 @@ def callback_btn_joy(pin):
             GPIO.output(BUZZER_PIN, GPIO.LOW)
         time.sleep(1)
         is_barcode = False
+        is_neolight = True
         display_text()
         socketio.emit("B2F_reload", {"status":1})
 
@@ -245,13 +246,13 @@ def check_joystick_movement(x_pos, y_pos):
     global is_neolight, current_number, is_barcode
     if abs(x_pos - CENTER_JOY) > abs(y_pos - CENTER_JOY):
         if (x_pos < (CENTER_JOY - THRESHOLD_JOY)):
-            print('Going Left')
-            is_neolight = True
+            # print('Going Left')
+            # is_neolight = True
             DataRepository.insert_values_historiek(3, x_pos, 'x-pos: left')
             socketio.emit("B2F_reload", {"status":1})
         elif (x_pos > (CENTER_JOY + THRESHOLD_JOY)):
-            print('Going Rigth')
-            is_neolight = True
+            # print('Going Rigth')
+            # is_neolight = True
             DataRepository.insert_values_historiek(3, x_pos, 'x-pos: rigth')
             socketio.emit("B2F_reload", {"status":1})
     else:
@@ -262,7 +263,7 @@ def check_joystick_movement(x_pos, y_pos):
                 print('Going Up')
                 if current_number < MAX_NUMBER_LCD:
                     current_number += 1
-                    is_neolight = True
+                 
                     display_number(current_number)
                     time.sleep(0.2)
                 DataRepository.insert_values_historiek(3, y_pos, 'y_pos: up')
@@ -271,7 +272,7 @@ def check_joystick_movement(x_pos, y_pos):
                 print('Going Down')
                 if current_number > MIN_NUMBER_LCD:
                     current_number -= 1
-                    is_neolight = True
+                    
                     display_number(current_number)
                     time.sleep(0.2)
                 DataRepository.insert_values_historiek(3, y_pos, 'y_pos: down')
@@ -304,10 +305,11 @@ def set_color(strip, color):
 
 def neopixelring():
     global is_neolight
+
     if is_neolight == True:
         set_color(strip, Color(0, 0, 255))
         time.sleep(0.5)
-        colorWipe(strip, Color(0, 0, 0))
+        set_color(strip, Color(0, 0, 0))
         is_neolight = False
 
 def display_number(number):
@@ -353,7 +355,7 @@ def main_loop():
         check_joystick_movement(joystick_x_value, joystick_y_value)
         check_lightsensor_activity(light_value)
         changeUI()
-        neopixelring()  # Roep de neopixelringfunctie binnen de hoofdlus aan
+        neopixelring() 
         read_barcode()
         time.sleep(1)
 
