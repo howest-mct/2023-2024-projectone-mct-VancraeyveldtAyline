@@ -19,6 +19,7 @@ const listenToSocket = function () {
   socketio.on('connect', function () {
     console.log('Verbonden met socket webserver');
   });
+  // test
 
   socketio.on('B2F_door', function (status) {
     const door_icon = document.querySelector(".door");
