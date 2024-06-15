@@ -206,9 +206,15 @@ class DataRepository:
 
 # ****************** GEBRUIKER VOORKEUREN ******************
     @staticmethod
-    def update_voorkeur(voorkeur_id: int, gebruiker_id: int, voorkeur_beschrijving: str, voorkeur_waarde: int, voorkeur_state: bool):
+    def read_voorkeur_by_description(description: str):
+        sql = "SELECT * FROM ShelfTracker.Gebruiker_Voorkeuren where voorkeur_beschrijving = %s;"
+        params = [description]
+        return Database.get_one_row(sql, params)
+
+    @staticmethod
+    def update_voorkeur(voorkeur_id: int, gebruiker_id: int, voorkeur_beschrijving: str, voorkeur_waarde):
         sql = "UPDATE Gebruiker_Voorkeuren SET gebruiker_id = %s, voorkeur_beschrijving = %s, voorkeur_waarde = %s, voorkeur_state = %s = %s WHERE voorkeur_id = %s"
-        params = [gebruiker_id, voorkeur_beschrijving, voorkeur_waarde, voorkeur_state, voorkeur_id]
+        params = [gebruiker_id, voorkeur_beschrijving, voorkeur_waarde, voorkeur_id]
         return Database.execute_sql(sql, params)
 
 

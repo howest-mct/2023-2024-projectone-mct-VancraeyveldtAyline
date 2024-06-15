@@ -13,44 +13,83 @@ const listenToUI = function () {
   } else {
     console.error('Button not found!');
   }
-};
+
+
+
+
+
+  const buttons = document.querySelectorAll('.toggle-button');
+  buttons.forEach(button => {
+      button.addEventListener('click', function() {
+          // Remove active class from all buttons
+          buttons.forEach(btn => {
+              btn.classList.remove('active');
+          });
+
+          // Add active class to the clicked button
+          button.classList.add('active');
+      });
+  });
+
+
+
+
+
+  
+}
 
 const listenToSocket = function () {
   socketio.on('connect', function () {
     console.log('Verbonden met socket webserver');
   });
-  // test
 
-  socketio.on('B2F_door', function (status) {
+  socketio.on('B2F_light_open', function (object) {
+    console.log(object)
     const door_icon = document.querySelector(".door");
     let iconHTML;
-    if (status.status == 0) {
-      iconHTML = `
-        <div class="door">
-          <img src="Icons/door_front_24dp_FILL0_wght400_GRAD0_opsz24 1.svg" alt="closed door icon" class="door__img">
-        </div>
-      `;
-    } else {
-      iconHTML = `
+    iconHTML = `
         <div class="door">
           <img src="Icons/door_open_24dp_FILL0_wght400_GRAD0_opsz24 1.svg" alt="open door icon" class="door__img">
         </div>
       `;
-    }
     if (door_icon) {
       door_icon.outerHTML = iconHTML;
     }
   });
 
-  socketio.on("B2F_reload", function (status) {
-    location.reload();
-  })
-  socketio.on("B2F_buzzer", function (status) {
-    // TO-DO: buzzer logica instellen: is_buzzer = false
+  socketio.on('B2F_light_close', function (object) {
+    console.log(object)
+    const door_icon = document.querySelector(".door");
+    let iconHTML;
+    iconHTML = `
+        <div class="door">
+          <img src="Icons/door_front_24dp_FILL0_wght400_GRAD0_opsz24 1.svg" alt="closed door icon" class="door__img">
+        </div>
+      `;
+    if (door_icon) {
+      door_icon.outerHTML = iconHTML;
+    }
   })
   socketio.on("B2F_xpos_left", function (object) {
     console.log(object)
   })
+
+
+
+  socketio.on('B2F_set_switch', function (data) {
+    // console.log("B2F_set_switch event received:", data);
+    const toggleSwitch = document.querySelector('.toggleSwitch');
+    if (toggleSwitch) {
+      toggleSwitch.checked = data.status;
+      if (data.status) {
+        console.log('Switch is set to ON');
+      } else {
+        console.log('Switch is set to OFF');
+      }
+    } else {
+      console.error("Toggle switch element not found.");
+    }
+  });
 };
 
 function listenToDropdown() {
@@ -375,13 +414,13 @@ const init = function () {
   product_history_page = document.querySelector('.js-product-history');
 
   listenToUI();
+  listenToSwitch()
   listenToSocket();
   if (inventory_page) {
     getInventory();
     listenToDropdown();
   }
   if (settings_page) {
-    listenToSwitch()
   }
   if (cart_page) {
     getCart()

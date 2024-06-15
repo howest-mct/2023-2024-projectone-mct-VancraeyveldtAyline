@@ -322,6 +322,38 @@ input:checked+.slider:before {
     }
 }
 
+/* Behoudt de witte kleur van de tekst */
+
+.toggle-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    margin: 5px;
+    border: none;
+    color: white;
+    background-color: #6c757d;
+    /* Grijze achtergrond voor niet-actieve knoppen */
+}
+
+.blue.active {
+    background-color: #007BFF;
+    /* Blauwe achtergrond voor actieve blauwe knop */
+}
+
+.red.active {
+    background-color: #DC3545;
+    /* Rode achtergrond voor actieve rode knop */
+}
+
+.green.active {
+    background-color: #28A745;
+    /* Groene achtergrond voor actieve groene knop */
+}
+
+
+
+
+
 /*---------------------------------------/*
  # UTILITIES
 /*---------------------------------------*/

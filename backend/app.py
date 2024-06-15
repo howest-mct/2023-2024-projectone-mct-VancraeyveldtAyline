@@ -116,15 +116,17 @@ def get_type_by_id(typeid):
 def initial_connection():
     global is_buzzer
     if is_buzzer == 1:
-        socketio.emit("B2F_buzzer", {"status": 1})
+        socketio.emit('B2F_set_switch', {'status': True})
     elif is_buzzer == 0:
-        socketio.emit("B2F_buzzer", {"status": 0})
+        socketio.emit('B2F_set_switch', {'status': False})
+    first_check_door()
     print('A new client connect')
 
 @socketio.on("F2B_buzzer")
 def change_buzzer(status):
     global is_buzzer
     is_buzzer = status['status']
+    DataRepository.update_voorkeur(4, 1, "buzzer_status", status['status'])
 
 
 # *************** HARDWARE ***************
@@ -143,7 +145,7 @@ BUTTON_IPS = 17
 BUTTON_SHUTDOWN = 27
 CENTER_JOY = 775
 THRESHOLD_JOY = 200
-THRESHOLD_LIGHT = 850
+THRESHOLD_LIGHT = 250
 MIN_NUMBER_LCD = -20
 MAX_NUMBER_LCD = 20
 
@@ -168,9 +170,10 @@ ser = serial.Serial(
     timeout=1
 )
 
+
+
 # Global variables
-is_buzzer = 1
-joystick_press_count = 0
+is_buzzer = (DataRepository.read_voorkeur_by_description("buzzer_status"))["voorkeur_waarde"]
 is_add = True
 is_open = False
 is_neolight = False
@@ -179,9 +182,7 @@ current_number = 1
 barcode = ''
 
 def callback_btn_joy(pin):
-    global joystick_press_count, is_barcode, current_number, barcode, is_buzzer, is_neolight
-    joystick_press_count += 1
-    print(f"The joystick has been pressed {joystick_press_count} times!")
+    global is_barcode, current_number, barcode, is_buzzer, is_neolight
     if is_barcode == True:
         DataRepository.insert_values_product_historiek(current_number, barcode)
         lcd.send_instruction(0x01)  # Clear display
@@ -195,7 +196,6 @@ def callback_btn_joy(pin):
         is_barcode = False
         is_neolight = True
         display_text()
-        # socketio.emit("B2F_reload", {"status":1})
 
 def setup():
     lcd.send_instruction(0x38)  # Initialize LCD in 8-bit mode, 2 lines, 5x7 characters
@@ -246,16 +246,11 @@ def check_joystick_movement(x_pos, y_pos):
     global is_neolight, current_number, is_barcode
     if abs(x_pos - CENTER_JOY) > abs(y_pos - CENTER_JOY):
         if (x_pos < (CENTER_JOY - THRESHOLD_JOY)):
-            # print('Going Left')
-            # is_neolight = True
             DataRepository.insert_values_historiek(3, x_pos, 'x-pos: left')
-            # socketio.emit("B2F_reload", {"status":1})
-            socketio.emit("B2F_xpos_left", {"pos": x_pos})
+            socketio.emit("B2F_xpos_left", {"sensor": 3, "pos": x_pos, "message": 'x-pos: left'})
         elif (x_pos > (CENTER_JOY + THRESHOLD_JOY)):
-            # print('Going Rigth')
-            # is_neolight = True
             DataRepository.insert_values_historiek(3, x_pos, 'x-pos: right')
-            socketio.emit("B2F_reload", {"status":1})
+            socketio.emit("B2F_xpos_right", {"sensor": 3, "pos": x_pos, "message": 'x-pos: right'})
     else:
         while is_barcode == True:
             x_pos = mcp3008.read_channel(JOYSTICK_CHANNEL_X)
@@ -264,20 +259,18 @@ def check_joystick_movement(x_pos, y_pos):
                 print('Going Up')
                 if current_number < MAX_NUMBER_LCD:
                     current_number += 1
-                 
                     display_number(current_number)
                     time.sleep(0.2)
                 DataRepository.insert_values_historiek(3, y_pos, 'y_pos: up')
-                socketio.emit("B2F_reload", {"status":1})
+                socketio.emit("B2F_ypos_up", {"sensor": 3, "pos": y_pos, "message": 'y-pos: up'})
             elif (y_pos > (CENTER_JOY + THRESHOLD_JOY)):
                 print('Going Down')
                 if current_number > MIN_NUMBER_LCD:
                     current_number -= 1
-                    
                     display_number(current_number)
                     time.sleep(0.2)
                 DataRepository.insert_values_historiek(3, y_pos, 'y_pos: down')
-                socketio.emit("B2F_reload", {"status":1})
+                socketio.emit("B2F_ypos_down", {"sensor": 3, "pos": y_pos, "message": 'y-pos: down'})
 
 def check_lightsensor_activity(light_value):
     global is_open
@@ -285,12 +278,12 @@ def check_lightsensor_activity(light_value):
         if is_open == False:
             is_open = True  
             DataRepository.insert_values_historiek(1, light_value, 'opened')
-            socketio.emit("B2F_reload", {"status":1})
+            socketio.emit("B2F_light_open", {"sensor": 1, "value": light_value, "message": 'opened'})
     elif light_value >= THRESHOLD_LIGHT:
         if is_open == True:
             is_open = False
             DataRepository.insert_values_historiek(1, light_value, 'closed')
-            socketio.emit("B2F_reload", {"status":1})
+            socketio.emit("B2F_light_close", {"sensor": 1, "value": light_value, "message": 'closed'})
 
 def colorWipe(strip, color, wait_ms=50):
     """Wipe color across display a pixel at a time."""
@@ -355,23 +348,23 @@ def main_loop():
         light_value = mcp3008.read_channel(LIGHT_CHANNEL)
         check_joystick_movement(joystick_x_value, joystick_y_value)
         check_lightsensor_activity(light_value)
-        changeUI()
         neopixelring() 
         read_barcode()
         time.sleep(1)
 
-def changeUI():
+def first_check_door():
     global is_open
-    if is_open == 1:
-        socketio.emit("B2F_door",{"status":1})
-    elif is_open == 0:
-        socketio.emit("B2F_door",{"status":0})
-
+    light_value = mcp3008.read_channel(LIGHT_CHANNEL)
+    if light_value < THRESHOLD_LIGHT:
+        is_open = True
+        socketio.emit("B2F_light_open", {"sensor": 1, "value": light_value, "message": 'first check'})
+    elif light_value >= THRESHOLD_LIGHT:
+        is_open = False
+        socketio.emit("B2F_light_close", {"sensor": 1, "value": light_value, "message": 'first check'})
 
 try:
     setup()
     display_text()
-    changeUI()
     print("**** Starting APP ****")
     flask_thread = threading.Thread(target=run_flask)
     main_thread = threading.Thread(target=main_loop)
