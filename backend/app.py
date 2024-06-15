@@ -120,6 +120,7 @@ def initial_connection():
     elif is_buzzer == 0:
         socketio.emit('B2F_set_switch', {'status': False})
     first_check_door()
+    socketio.emit('B2F_lighting', {'color': lighting_color})
     print('A new client connect')
 
 @socketio.on("F2B_buzzer")
@@ -128,9 +129,24 @@ def change_buzzer(status):
     is_buzzer = status['status']
     DataRepository.update_voorkeur(4, 1, "buzzer_status", status['status'])
 
+@socketio.on("F2B_lighting")
+def change_color(color):
+    print(color)
+    global lighting_color
+    lighting_color = color['color']
+    if lighting_color == 'green':
+        print(("chagne"))
+        DataRepository.update_voorkeur(5, 1, "lighting_color", 1)
+    if lighting_color == 'blue':
+        print(("chagne"))
+        DataRepository.update_voorkeur(5, 1, "lighting_color", 2)
+    if lighting_color == 'red':
+        print(("chagne"))
+        DataRepository.update_voorkeur(5, 1, "lighting_color", 3)
+
+
 
 # *************** HARDWARE ***************
-
 
 # Constant values
 BUZZER_PIN = 22
@@ -170,8 +186,6 @@ ser = serial.Serial(
     timeout=1
 )
 
-
-
 # Global variables
 is_buzzer = (DataRepository.read_voorkeur_by_description("buzzer_status"))["voorkeur_waarde"]
 is_add = True
@@ -180,6 +194,13 @@ is_neolight = False
 is_barcode = False
 current_number = 1
 barcode = ''
+lighting_color_value = (DataRepository.read_voorkeur_by_description("lighting_color"))["voorkeur_waarde"]
+if lighting_color_value == 1:
+    lighting_color = "green"
+if lighting_color_value == 2:
+    lighting_color = "blue"
+if lighting_color_value == 3:
+    lighting_color = "red"
 
 def callback_btn_joy(pin):
     global is_barcode, current_number, barcode, is_buzzer, is_neolight
@@ -293,17 +314,24 @@ def colorWipe(strip, color, wait_ms=50):
         time.sleep(wait_ms / 1000.0)
 
 def set_color(strip, color):
+    if color == "none":
+        color_value = Color(0,0,0)
+    if color == "green":
+        color_value = Color(0,255,0)
+    if color == "red":
+        color_value = Color(255,0,0)
+    if color == "blue":
+        color_value = Color(0,0,255)
     for i in range(strip.numPixels()):
-        strip.setPixelColor(i, color)
+        strip.setPixelColor(i, color_value)
     strip.show()
 
 def neopixelring():
     global is_neolight
-
     if is_neolight == True:
-        set_color(strip, Color(0, 0, 255))
+        set_color(strip, lighting_color)
         time.sleep(0.5)
-        set_color(strip, Color(0, 0, 0))
+        set_color(strip, "none")
         is_neolight = False
 
 def display_number(number):
@@ -363,6 +391,8 @@ def first_check_door():
         socketio.emit("B2F_light_close", {"sensor": 1, "value": light_value, "message": 'first check'})
 
 try:
+    print(lighting_color)
+    is_neolight = True
     setup()
     display_text()
     print("**** Starting APP ****")

@@ -1,7 +1,7 @@
 const lanIP = `${window.location.hostname}:5000`;
 const socketio = io(`http://${lanIP}`);
-
-let rows_to_be_loaded = 5
+let buttons;
+let rows_to_be_loaded = 5;
 
 
 const listenToUI = function () {
@@ -14,34 +14,39 @@ const listenToUI = function () {
     console.error('Button not found!');
   }
 
-
-
-
-
-  const buttons = document.querySelectorAll('.toggle-button');
+  buttons = document.querySelectorAll('.toggle-button'); // Definieer buttons hier
   buttons.forEach(button => {
-      button.addEventListener('click', function() {
-          // Remove active class from all buttons
+      button.addEventListener('click', function () {
+          // Verwijder 'active' class van alle knoppen
           buttons.forEach(btn => {
               btn.classList.remove('active');
           });
-
-          // Add active class to the clicked button
+          // Voeg 'active' class toe aan de geklikte knop
           button.classList.add('active');
+          const color = button.classList[1]; // Verkrijg kleur van geklikte knop
+          console.log(color);
+          socketio.emit("F2B_lighting", {"color": color}); // Stuur kleur naar backend
       });
   });
-
-
-
-
-
-  
-}
+};
 
 const listenToSocket = function () {
   socketio.on('connect', function () {
     console.log('Verbonden met socket webserver');
   });
+
+  socketio.on('B2F_lighting', function (object) {
+    let lighting_color = object.color; // Ontvangen kleur van backend
+    // Verwijder 'active' class van alle knoppen (gebruik buttons hier)
+    buttons.forEach(btn => {
+        btn.classList.remove('active');
+    });
+    // Voeg 'active' class toe aan knop met overeenkomende kleur
+    const current_color = document.querySelector("." + lighting_color);
+    if (current_color) {
+        current_color.classList.add('active');
+    }
+});
 
   socketio.on('B2F_light_open', function (object) {
     console.log(object)
@@ -73,8 +78,6 @@ const listenToSocket = function () {
   socketio.on("B2F_xpos_left", function (object) {
     console.log(object)
   })
-
-
 
   socketio.on('B2F_set_switch', function (data) {
     // console.log("B2F_set_switch event received:", data);
