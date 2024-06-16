@@ -359,11 +359,11 @@ const voegRijToe = function (data, type) {
   }
 };
 
-
 const showInventory = function (inventory) {
   try {
     console.log('Inventory ontvangen:', inventory);
     if (inventory && inventory.inventory) {
+      let contentHTML = '';
       for (let product of inventory.inventory) {
         let data = [
           product.product_naam,
@@ -372,9 +372,10 @@ const showInventory = function (inventory) {
           product.totaal_aantal,
           product.minimum_waarde,
         ];
-        console.log('works2')
-        voegRijToe(data, 'inv');
+        console.log('works2');
+        contentHTML += voegRijToe(data, 'inv');
       }
+      updateHTML('myTable', contentHTML);
     } else {
       console.error('Ongeldige records data ontvangen:', inventory);
     }
@@ -382,6 +383,7 @@ const showInventory = function (inventory) {
     console.log(e);
   }
 };
+
 
 const showSensorHistoryBarcode = function (history) {
   try {
@@ -500,28 +502,30 @@ const showCart = function (cart) {
   try {
     console.log('Cart ontvangen:', cart);
     if (cart && cart.cart) {
-      for (let item of cart.cart) {
-        let data = [
-          item.product_naam,
-          item.product_type,
-          item.totaal_aantal
-        ];
-        voegRijToe(data, 'cart');
+      let contentHTML = '';
+      
+      if (cart.cart.length === 0) {
+        console.log('Cart is leeg');
+        let emptyCartData = ['---', '---', '---']; // Gegevens voor een lege winkelwagenrij
+        contentHTML += voegRijToe(emptyCartData, 'cart');
+      } else {
+        for (let item of cart.cart) {
+          let data = [item.product_naam, item.product_type, item.totaal_aantal];
+          contentHTML += voegRijToe(data, 'cart');
+        }
       }
-      // console.log("data= "+ cart.cart)
-      // console.log(cart.cart.length)
-      if (cart.cart.length == 0) {
-        console.log("WORKS")
-        data = ["---", "---", "---"]
-        voegRijToe(data, "cart")
-      }
+      
+      updateHTML('myTable', contentHTML);
+      
     } else {
       console.error('Ongeldige records data ontvangen:', cart);
     }
   } catch (e) {
     console.log(e);
   }
-}
+};
+
+
 
 
 const getInventory = function () {
