@@ -216,14 +216,6 @@ const listenToSwitch = function() {
   }
 };
 
-const dataRow2HTML = function (data, type) {
-  let rijHTML = `<tr>`;
-    for (let i of data) {
-      rijHTML += `<td>${i}</td>`;
-    }
-    rijHTML += `</tr>`;
-  return rijHTML;
-}
 
 const getRowCountFromTable = function (className) {
   tableBody = document.querySelector('.'+className);
@@ -271,6 +263,7 @@ const voegRijToe = function (data, type) {
     }
     rijHTML += `</tr>`;
   } 
+  
   
   else if (type === 'his2') {
     tableBody = document.querySelector('.myTable2');
@@ -328,7 +321,8 @@ const voegRijToe = function (data, type) {
   }
 
   if (tableBody) {
-    tableBody.insertAdjacentHTML('beforeend', rijHTML);
+    // tableBody.insertAdjacentHTML('beforeend', rijHTML);
+    return rijHTML
   }
 };
 
@@ -359,79 +353,78 @@ const showInventory = function (inventory) {
 const showSensorHistoryBarcode = function (history) {
   try {
     storedBarcodeHistory = history;
-    let alldata = [] 
+    let alldata = [];
     console.log('History ontvangen:', history);
     if (history && history.history) {
-        for (let record of history.history) {
-          let data = [
-            record.waarde,
-            record.tijdstip_waarde,
-            record.opmerking
-          ];
-          alldata.push(data)
-          // voegRijToe(data, 'his1');
-        }
-        for (let i = 0; i < rows_to_be_loaded_sensor_barcode; i++) {
-          voegRijToe(alldata[i], 'his1');
-        }
+      for (let record of history.history) {
+        let data = [record.waarde, record.tijdstip_waarde, record.opmerking];
+        alldata.push(data);
       }
-       else {
+      let contentHTML = '';
+      let nrExistingRows = getRowCountFromTable('myTable1');
+      let nrRowsInTable = nrExistingRows + rows_to_be_loaded_sensor_barcode;
+      for (let i = 0; i < nrRowsInTable; i++) {
+        contentHTML += voegRijToe(alldata[i], 'his1');
+        // voegRijToe(alldata[i], 'his1');
+      }
+      updateHTML('myTable1', contentHTML);
+    } else {
       console.error('Ongeldige records data ontvangen:', history);
     }
   } catch (e) {
     console.log(e);
   }
-}
+};
+
 const showSensorHistoryLight = function (history) {
   try {
-    storedLightHistory = history
-    let alldata = []
+    storedLightHistory = history;
+    let alldata = [];
     console.log('History ontvangen:', history);
     if (history && history.history) {
-        for (let record of history.history) {
-          let data = [
-            record.waarde,
-            record.tijdstip_waarde,
-            record.opmerking
-          ];
-          alldata.push(data)
-        }
-        for (let i = 0; i < rows_to_be_loaded_sensor_light; i++) {
-          voegRijToe(alldata[i], 'his2');
-        }
+      for (let record of history.history) {
+        let data = [record.waarde, record.tijdstip_waarde, record.opmerking];
+        alldata.push(data);
       }
-       else {
+      let contentHTML = '';
+      let nrExistingRows = getRowCountFromTable('myTable2');
+      let nrRowsInTable = nrExistingRows + rows_to_be_loaded_sensor_light;
+      for (let i = 0; i < nrRowsInTable; i++) {
+        contentHTML += voegRijToe(alldata[i], 'his2');
+      }
+      updateHTML('myTable2', contentHTML);
+    } else {
       console.error('Ongeldige records data ontvangen:', history);
     }
   } catch (e) {
     console.log(e);
   }
-}
+};
+
 const showSensorHistoryJoy = function (history) {
   try {
-    storedJoyHistory = history
-    let alldata = []
+    storedJoyHistory = history;
+    let alldata = [];
     console.log('History ontvangen:', history);
     if (history && history.history) {
-        for (let record of history.history) {
-          let data = [
-            record.waarde,
-            record.tijdstip_waarde,
-            record.opmerking
-          ];
-          alldata.push(data)
-        }
-        for (let i = 0; i < rows_to_be_loaded_sensor_joy; i++) {
-          voegRijToe(alldata[i], 'his3');
-        }
+      for (let record of history.history) {
+        let data = [record.waarde, record.tijdstip_waarde, record.opmerking];
+        alldata.push(data);
       }
-       else {
+      let contentHTML = '';
+      let nrExistingRows = getRowCountFromTable('myTable3');
+      let nrRowsInTable = nrExistingRows + rows_to_be_loaded_sensor_barcode;
+      for (let i = 0; i < nrRowsInTable; i++) {
+        contentHTML += voegRijToe(alldata[i], 'his3');
+      }
+      updateHTML('myTable3', contentHTML);
+    } else {
       console.error('Ongeldige records data ontvangen:', history);
     }
   } catch (e) {
     console.log(e);
   }
-}
+};
 
 const showProductHistory = function (history) {
   try {
@@ -452,7 +445,7 @@ const showProductHistory = function (history) {
         let nrExistingRows=getRowCountFromTable("myTable");
         let nrRowsInTable=nrExistingRows+rows_to_be_loaded_product;
         for (let i = 0; i < nrRowsInTable; i++) {
-          contentHTML += dataRow2HTML(alldata[i], "prodhis")
+          contentHTML += voegRijToe(alldata[i], "prodhis")
           console.log("date" +i+' '+ alldata[i][2])
           // voegRijToe(alldata[i], "prodhis");
         }
