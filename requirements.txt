@@ -21,3 +21,6 @@ Werkzeug==3.0.3
 wsproto==1.2.0
 zope.event==5.0
 zope.interface==6.4
+pyserial==3.5
+rpi_ws281x==5.0.0
+spidev==3.6
