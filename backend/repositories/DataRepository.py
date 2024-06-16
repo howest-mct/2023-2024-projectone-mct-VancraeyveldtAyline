@@ -185,6 +185,20 @@ class DataRepository:
         mysql_datetime_formaat = huidige_tijd.strftime('%Y-%m-%d %H:%M:%S')
         params = [wijziging, mysql_datetime_formaat, barcode]
         return Database.execute_sql(sql, params)
+    
+    @staticmethod
+    def read_product_historiek_by_barcode(barcode):
+        sql = """
+        SELECT * FROM Producten_Historiek ph 
+        left join Producten p 
+        on p.product_id = ph.product_id 
+        left join Product_Types pt
+        on pt.type_id = p.product_type
+        where p.barcode = %s 
+        order by ph.tijdstip desc limit 1;
+        """
+        params = [barcode]
+        return Database.get_one_row(sql, params)
 
     @staticmethod
     def read_records_product_historiek_by_productid(productid: int):
@@ -194,7 +208,7 @@ class DataRepository:
     
     @staticmethod
     def read_records_product_historiek():
-        sql = "SELECT ph.*, p.product_naam, pt.product_type from Producten_Historiek ph LEFT JOIN Producten p ON p.product_id = ph.product_id left join Product_Types pt on pt.type_id = p.product_type"
+        sql = "SELECT ph.*, p.product_naam, pt.product_type from Producten_Historiek ph LEFT JOIN Producten p ON p.product_id = ph.product_id left join Product_Types pt on pt.type_id = p.product_type order by tijdstip desc"
         return Database.get_rows(sql)
     
     @staticmethod

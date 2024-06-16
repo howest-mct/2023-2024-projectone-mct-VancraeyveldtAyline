@@ -80,6 +80,24 @@ const listenToSocket = function () {
     console.log('Verbonden met socket webserver');
   });
 
+  socketio.on('B2F_product_change', function (data) {
+    console.log('Product change received:', data);
+    if (product_history_page) {
+      let productData = [data.name, data.category, data.date, data.change];
+      // Get the table body
+      let tableBody = document.querySelector('.myTable');
+      // Check if adding one row will exceed the limit of 10 rows
+      if (tableBody.querySelectorAll('tr').length >= 10) {
+        // Remove the last row
+        tableBody.deleteRow(-1);
+      }
+      // Insert new row at the top of the table
+      let rijHTML=dataRow2HTML(productData,"prodhis");
+      tableBody.innerHTML=rijHTML+tableBody.innerHTML;
+      //voegRijToe(productData, 'prodhis');
+    }
+  });
+
   socketio.on('B2F_lighting', function (object) {
     let lighting_color = object.color; // Ontvangen kleur van backend
     // Verwijder 'active' class van alle knoppen (gebruik buttons hier)
@@ -189,6 +207,26 @@ const listenToSwitch = function() {
     });
   }
 };
+
+const dataRow2HTML = function (data, type) {
+  let rijHTML = `<tr>`;
+    for (let i of data) {
+      rijHTML += `<td>${i}</td>`;
+    }
+    rijHTML += `</tr>`;
+  return rijHTML;
+}
+
+const getRowCountFromTable = function (className) {
+  tableBody = document.querySelector('.'+className);
+  console.log(tableBody.childElementCount)
+  return tableBody.childElementCount
+}
+  
+const updateHTML = function (className, htmlcontent) {
+  tableBody = document.querySelector('.'+className);
+  tableBody.innerHTML=htmlcontent;
+}
 
 const voegRijToe = function (data, type) {
   // console.log("data:", data);
@@ -402,9 +440,16 @@ const showProductHistory = function (history) {
           ];
           alldata.push(data)
         }
-        for (let i = 0; i < rows_to_be_loaded_product; i++) {
-          voegRijToe(alldata[i], "prodhis");
+        let contentHTML = "";
+        let nrExistingRows=getRowCountFromTable("myTable");
+        let nrRowsInTable=nrExistingRows+rows_to_be_loaded_product;
+        for (let i = 0; i < nrRowsInTable; i++) {
+          contentHTML += dataRow2HTML(alldata[i], "prodhis")
+          console.log("date" +i+' '+ alldata[i][2])
+          // voegRijToe(alldata[i], "prodhis");
         }
+        updateHTML("myTable", contentHTML);
+        console.log("UPDATE HTML")
       }
        else {
       console.error('Ongeldige records data ontvangen:', history);

@@ -10,6 +10,7 @@ from lcd import LCD_Display
 from mcp3008 import MCP3008
 from rpi_ws281x import PixelStrip, Color
 import serial
+from datetime import datetime
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'HELLOTHISISSCERET'
@@ -214,6 +215,10 @@ def callback_btn_joy(pin):
             time.sleep(0.1)
             GPIO.output(BUZZER_PIN, GPIO.LOW)
         time.sleep(1)
+        product = DataRepository.read_product_historiek_by_barcode(barcode)
+        print(product)
+        formatted_date = product["tijdstip"].strftime('%Y-%m-%d %H:%M:%S')
+        socketio.emit("B2F_product_change", {"name": product["product_naam"], "category":product["product_type"], "date":formatted_date, "change":product["product_aantal_wijziging"]})
         is_barcode = False
         is_neolight = True
         display_text()
