@@ -1,18 +1,63 @@
 const lanIP = `${window.location.hostname}:5000`;
 const socketio = io(`http://${lanIP}`);
 let buttons;
-let rows_to_be_loaded = 5;
+let rows_to_be_loaded_sensor_barcode = 10;
+let rows_to_be_loaded_sensor_light = 10;
+let rows_to_be_loaded_sensor_joy = 10;
+let rows_to_be_loaded_product = 10;
+let storedProductHistory;
+let storedBarcodeHistory;
+let storedLightHistory;
+let storedJoyHistory;
+
 
 
 const listenToUI = function () {
-  const loadMoreBtn = document.querySelector('.load-more-btn');
-  if (loadMoreBtn) {
-    loadMoreBtn.addEventListener('click', function () {
+
+  const loadMoreBtnBar = document.querySelector('.btn__barcode');
+  if (loadMoreBtnBar) {
+    loadMoreBtnBar.addEventListener('click', function () {
       console.log('Button was clicked!');
-    });
-  } else {
+      rows_to_be_loaded_sensor_barcode = 5;
+      showSensorHistoryBarcode(storedBarcodeHistory);
+  })
+ } else {
     console.error('Button not found!');
   }
+
+  const loadMoreBtnLight = document.querySelector('.btn__light');
+  if (loadMoreBtnLight) {
+    loadMoreBtnLight.addEventListener('click', function () {
+      console.log('Button was clicked!');
+      rows_to_be_loaded_sensor_light = 5;
+      showSensorHistoryLight(storedLightHistory);
+  })
+ } else {
+    console.error('Button not found!');
+  }
+
+  const loadMoreBtnJoy = document.querySelector('.btn__joy');
+  if (loadMoreBtnJoy) {
+    loadMoreBtnJoy.addEventListener('click', function () {
+      console.log('Button was clicked!');
+      rows_to_be_loaded_sensor_joy = 5;
+      showSensorHistoryJoy(storedJoyHistory);
+  })
+ } else {
+    console.error('Button not found!');
+  }
+
+  const loadMoreBtnProd = document.querySelector('.btn__product');
+  if (loadMoreBtnProd) {
+    loadMoreBtnProd.addEventListener('click', function () {
+      console.log('Button was clicked!');
+      rows_to_be_loaded_sensor_joy = 5;
+      showProductHistory(storedProductHistory);
+  })
+ } else {
+    console.error('Button not found!');
+  }
+
 
   buttons = document.querySelectorAll('.toggle-button'); // Definieer buttons hier
   buttons.forEach(button => {
@@ -202,6 +247,7 @@ const voegRijToe = function (data, type) {
   } 
   
   else if (type === 'prodhis') {
+    console.log("INSERT WORKS")
     tableBody = document.querySelector('.myTable');
     if (data[3] < 0) {
       rijHTML = `<tr class="row-negative">`;
@@ -224,7 +270,6 @@ const voegRijToe = function (data, type) {
       }
     }
     rijHTML += `</tr>`;
-    tableBody.insertAdjacentHTML('beforeend', rijHTML);
   } 
   
   else if (type === 'cart') {
@@ -267,6 +312,7 @@ const showInventory = function (inventory) {
 
 const showSensorHistoryBarcode = function (history) {
   try {
+    storedBarcodeHistory = history;
     let alldata = [] 
     console.log('History ontvangen:', history);
     if (history && history.history) {
@@ -279,7 +325,7 @@ const showSensorHistoryBarcode = function (history) {
           alldata.push(data)
           // voegRijToe(data, 'his1');
         }
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < rows_to_be_loaded_sensor_barcode; i++) {
           voegRijToe(alldata[i], 'his1');
         }
       }
@@ -292,6 +338,7 @@ const showSensorHistoryBarcode = function (history) {
 }
 const showSensorHistoryLight = function (history) {
   try {
+    storedLightHistory = history
     let alldata = []
     console.log('History ontvangen:', history);
     if (history && history.history) {
@@ -303,7 +350,7 @@ const showSensorHistoryLight = function (history) {
           ];
           alldata.push(data)
         }
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < rows_to_be_loaded_sensor_light; i++) {
           voegRijToe(alldata[i], 'his2');
         }
       }
@@ -314,12 +361,9 @@ const showSensorHistoryLight = function (history) {
     console.log(e);
   }
 }
-
-
-
-
 const showSensorHistoryJoy = function (history) {
   try {
+    storedJoyHistory = history
     let alldata = []
     console.log('History ontvangen:', history);
     if (history && history.history) {
@@ -331,7 +375,7 @@ const showSensorHistoryJoy = function (history) {
           ];
           alldata.push(data)
         }
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < rows_to_be_loaded_sensor_joy; i++) {
           voegRijToe(alldata[i], 'his3');
         }
       }
@@ -345,24 +389,33 @@ const showSensorHistoryJoy = function (history) {
 
 const showProductHistory = function (history) {
   try {
+    storedProductHistory = history
+    let alldata = []
     console.log('History ontvangen:', history);
     if (history && history.history) {
-      for (let record of history.history) {
-        let data = [
-          record.product_naam,
-          record.product_type,
-          record.tijdstip, 
-          record.product_aantal_wijziging
-        ];
-        voegRijToe(data, 'prodhis');
+        for (let record of history.history) {
+          let data = [
+            record.product_naam,
+            record.product_type,
+            record.tijdstip,
+            record.product_aantal_wijziging
+          ];
+          alldata.push(data)
+        }
+        for (let i = 0; i < rows_to_be_loaded_product; i++) {
+          voegRijToe(alldata[i], "prodhis");
+        }
       }
-    } else {
+       else {
       console.error('Ongeldige records data ontvangen:', history);
     }
   } catch (e) {
     console.log(e);
   }
 }
+
+
+
 
 const showCart = function (cart) {
   try {
