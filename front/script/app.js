@@ -188,9 +188,11 @@ const voegRijToe = function (data, type) {
       rijHTML += `<td>${i}</td>`;
     }
     rijHTML += `</tr>`;
-  } 
+  }
+
   
   else if (type === 'his3') {
+    
     tableBody = document.querySelector('.myTable3');
     rijHTML = `<tr>`;
     for (let i of data) {
@@ -268,10 +270,7 @@ const showSensorHistoryBarcode = function (history) {
     let alldata = [] 
     console.log('History ontvangen:', history);
     if (history && history.history) {
-      console.log("izufhizufh^zuhz^fuih")
-        console.log("555555555555555")
         for (let record of history.history) {
-
           let data = [
             record.waarde,
             record.tijdstip_waarde,
@@ -281,7 +280,6 @@ const showSensorHistoryBarcode = function (history) {
           // voegRijToe(data, 'his1');
         }
         for (let i = 0; i < 5; i++) {
-          console.log("yo")
           voegRijToe(alldata[i], 'his1');
         }
       }
@@ -294,36 +292,50 @@ const showSensorHistoryBarcode = function (history) {
 }
 const showSensorHistoryLight = function (history) {
   try {
+    let alldata = []
     console.log('History ontvangen:', history);
     if (history && history.history) {
-      for (let record of history.history) {
-        let data = [
-          record.waarde,
-          record.tijdstip_waarde,
-          record.opmerking
-        ];
-        voegRijToe(data, 'his2');
+        for (let record of history.history) {
+          let data = [
+            record.waarde,
+            record.tijdstip_waarde,
+            record.opmerking
+          ];
+          alldata.push(data)
+        }
+        for (let i = 0; i < 5; i++) {
+          voegRijToe(alldata[i], 'his2');
+        }
       }
-    } else {
+       else {
       console.error('Ongeldige records data ontvangen:', history);
     }
   } catch (e) {
     console.log(e);
   }
 }
+
+
+
+
 const showSensorHistoryJoy = function (history) {
   try {
+    let alldata = []
     console.log('History ontvangen:', history);
     if (history && history.history) {
-      for (let record of history.history) {
-        let data = [
-          record.waarde,
-          record.tijdstip_waarde,
-          record.opmerking
-        ];
-        voegRijToe(data, 'his3');
+        for (let record of history.history) {
+          let data = [
+            record.waarde,
+            record.tijdstip_waarde,
+            record.opmerking
+          ];
+          alldata.push(data)
+        }
+        for (let i = 0; i < 5; i++) {
+          voegRijToe(alldata[i], 'his3');
+        }
       }
-    } else {
+       else {
       console.error('Ongeldige records data ontvangen:', history);
     }
   } catch (e) {
