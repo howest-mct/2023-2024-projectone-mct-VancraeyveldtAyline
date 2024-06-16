@@ -203,6 +203,9 @@ is_neolight = False
 is_barcode = False
 current_number = 1
 barcode = ''
+required_press_time = 3
+press_start_time = None
+
 lighting_color_value = (DataRepository.read_voorkeur_by_description("lighting_color"))["voorkeur_waarde"]
 if lighting_color_value == 1:
     lighting_color = "green"
@@ -242,7 +245,6 @@ def setup():
     GPIO.setup(BUTTON_IPS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.add_event_detect(BUTTON_IPS, GPIO.FALLING, callback=callback_btn_ips, bouncetime=300)
     GPIO.setup(BUTTON_SHUTDOWN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    GPIO.add_event_detect(BUTTON_SHUTDOWN, GPIO.FALLING, callback=callback_btn_shut, bouncetime=300)
 
 def get_ip_addresses():
     ips = check_output(['hostname', '--all-ip-addresses']).decode('utf-8').strip().split()
@@ -269,12 +271,24 @@ def callback_btn_ips(pin):
     time.sleep(4)
     display_text()
 
-def callback_btn_shut(pin):
-    lcd.send_instruction(0x01)  # Clear display
-    lcd.send_instruction(0x80)  # Move cursor to the first line
-    lcd.send_text("It's a Shutdown")
-    time.sleep(4)  # Wacht 1 seconde
-    display_text()
+def check_button():
+    global press_start_time
+    while True:
+        if GPIO.input(BUTTON_SHUTDOWN) == GPIO.LOW:  # Knop is ingedrukt
+            if press_start_time is None:
+                press_start_time = time.time()
+            elif time.time() - press_start_time >= required_press_time:
+                print("Knop lang genoeg ingedrukt!")
+                lcd.send_instruction(0x01)  # Clear display
+                lcd.send_instruction(0x80)  # Move cursor to the first line
+                lcd.send_text("It's a Shutdown")
+                os.system("sudo poweroff")
+                # Hier kun je de gewenste actie uitvoeren
+                press_start_time = None  # Reset de timer na het uitvoeren van de actie
+        else:  # Knop is niet ingedrukt
+            press_start_time = None  # Reset de timer als de knop wordt losgelaten
+        time.sleep(0.1)  # Controleer elke 100 ms
+
 
 def check_joystick_movement(x_pos, y_pos):
     global is_neolight, current_number, is_barcode
@@ -410,9 +424,12 @@ try:
     setup()
     display_text()
     print("**** Starting APP ****")
+    button_thread = threading.Thread(target=check_button)
     flask_thread = threading.Thread(target=run_flask)
     main_thread = threading.Thread(target=main_loop)
     # Verwijder de neo_thread omdat de functie in de hoofdlus wordt aangeroepen
+    button_thread.daemon = True
+    button_thread.start()
     flask_thread.start()
     main_thread.start()
     flask_thread.join()
@@ -421,5 +438,12 @@ except KeyboardInterrupt:
     print("Program terminated by user.")
 finally:
     GPIO.cleanup()
-    ser.close()
-    mcp3008.close()
+    # Zorg ervoor dat je ser en mcp3008 alleen sluit als ze bestaan
+    try:
+        ser.close()
+    except NameError:
+        pass
+    try:
+        mcp3008.close()
+    except NameError:
+        pass
