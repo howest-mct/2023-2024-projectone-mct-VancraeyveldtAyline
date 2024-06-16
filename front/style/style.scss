@@ -209,7 +209,8 @@ input:checked+.slider:before {
 }
 
 .great-divide {
-    height: 100vh;
+    display: flex;
+    min-height: 100vh;
 }
 
 .container {
@@ -233,6 +234,7 @@ input:checked+.slider:before {
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
         color: $ligthest-gray;
 
+
         &-margins {
             margin: 36px 0 36px 36px;
         }
@@ -253,10 +255,6 @@ input:checked+.slider:before {
         /* Verdeel items gelijkmatig met ruimte ertussen */
         align-items: flex-start;
         /* Zorg dat items bovenaan uitgelijnd zijn */
-
-        &--inventory {
-            /* Voeg hier stijlen toe voor de inventaris */
-        }
 
         &--profile {
             color: $title-color;
