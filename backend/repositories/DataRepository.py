@@ -57,17 +57,18 @@ class DataRepository:
         sql = "SELECT * from Historiek WHERE device_id = %s Order by tijdstip_waarde desc;"
         params = [id]
         return Database.get_rows(sql, params)
+
+    @staticmethod
+    def read_latest_record_historiek_by_id(id):
+        sql = "SELECT * from Historiek WHERE device_id = %s Order by tijdstip_waarde desc limit 1"
+        params = [id]
+        return Database.get_one_row(sql, params)
     
     @staticmethod
     def read_records_historiek():
         sql = "SELECT * FROM Historiek as h inner join Devices as d on h.device_id = d.device_id"
         return Database.get_rows(sql)
-    
-    @staticmethod
-    def read_records_historiek_by_date(date: str):
-        sql = "SELECT * FROM Historiek WHERE DATE(tijdstip_waarde) = %s;"
-        params = [date]
-        return Database.get_rows(sql, params)
+
 
 
 # ****************** TYPES ******************

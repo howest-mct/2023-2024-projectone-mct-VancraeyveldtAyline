@@ -88,21 +88,32 @@ const listenToSocket = function () {
     console.log('Verbonden met socket webserver');
   });
 
+  socketio.on("B2F_joystick", function (data) {
+    if (sensor_history_page) {
+      let sensorData = [data.value, data.date, data.note];
+      // Get the table body
+      let tableBody = document.querySelector('.myTable3');
+      tableBody.deleteRow(-1);
+      // Insert new row at the top of the table
+      let rijHTML=voegRijToe(sensorData,"his3");
+      tableBody.innerHTML=rijHTML+tableBody.innerHTML;
+    }
+  })
+
   socketio.on('B2F_product_change', function (data) {
     console.log('Product change received:', data);
     if (product_history_page) {
+
       let productData = [data.name, data.category, data.date, data.change];
       // Get the table body
       let tableBody = document.querySelector('.myTable');
-      // Check if adding one row will exceed the limit of 10 rows
-      if (tableBody.querySelectorAll('tr').length >= 10) {
-        // Remove the last row
+      // Remove the last row
         tableBody.deleteRow(-1);
-      }
       // Insert new row at the top of the table
-      let rijHTML=dataRow2HTML(productData,"prodhis");
+      let rijHTML=voegRijToe(productData,"prodhis");
       tableBody.innerHTML=rijHTML+tableBody.innerHTML;
       //voegRijToe(productData, 'prodhis');
+
     }
   });
 
@@ -215,7 +226,6 @@ const listenToSwitch = function() {
     });
   }
 };
-
 
 const getRowCountFromTable = function (className) {
   tableBody = document.querySelector('.'+className);

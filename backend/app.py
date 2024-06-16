@@ -296,9 +296,15 @@ def check_joystick_movement(x_pos, y_pos):
         if (x_pos < (CENTER_JOY - THRESHOLD_JOY)):
             DataRepository.insert_values_historiek(3, x_pos, 'x-pos: left')
             socketio.emit("B2F_xpos_left", {"sensor": 3, "pos": x_pos, "message": 'x-pos: left'})
+            record = DataRepository.read_latest_record_historiek_by_id(3)
+            formatted_date = record["tijdstip_waarde"].strftime('%Y-%m-%d %H:%M:%S')
+            socketio.emit("B2F_joystick", {"value": record["waarde"], "date":formatted_date, "note":record["opmerking"]})
         elif (x_pos > (CENTER_JOY + THRESHOLD_JOY)):
             DataRepository.insert_values_historiek(3, x_pos, 'x-pos: right')
             socketio.emit("B2F_xpos_right", {"sensor": 3, "pos": x_pos, "message": 'x-pos: right'})
+            record = DataRepository.read_latest_record_historiek_by_id(3)
+            formatted_date = record["tijdstip_waarde"].strftime('%Y-%m-%d %H:%M:%S')
+            socketio.emit("B2F_joystick", {"value": record["waarde"], "date":formatted_date, "note":record["opmerking"]})
     else:
         while is_barcode == True:
             x_pos = mcp3008.read_channel(JOYSTICK_CHANNEL_X)
