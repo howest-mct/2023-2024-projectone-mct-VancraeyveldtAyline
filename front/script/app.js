@@ -14,6 +14,14 @@ let storedJoyHistory;
 
 const listenToUI = function () {
 
+  const shutdownBtn = document.querySelector('.shutdown-btn');
+  if (shutdownBtn) {
+    shutdownBtn.addEventListener('click', function () {
+      console.log('SHUTTING DOWN')
+      socketio.emit("F2B_shutdown", {"status":1})
+    })
+  }
+
   const loadMoreBtnBar = document.querySelector('.btn__barcode');
   if (loadMoreBtnBar) {
     loadMoreBtnBar.addEventListener('click', function () {

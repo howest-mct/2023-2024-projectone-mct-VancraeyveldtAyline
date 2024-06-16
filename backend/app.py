@@ -11,6 +11,8 @@ from mcp3008 import MCP3008
 from rpi_ws281x import PixelStrip, Color
 import serial
 from datetime import datetime
+import os
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'HELLOTHISISSCERET'
@@ -123,6 +125,12 @@ def initial_connection():
     first_check_door()
     socketio.emit('B2F_lighting', {'color': lighting_color})
     print('A new client connect')
+
+@socketio.on("F2B_shutdown")
+def shutdown(status):
+    if status.status == 1:
+        os.system("sudo poweroff")
+
 
 @socketio.on("F2B_buzzer")
 def change_buzzer(status):
