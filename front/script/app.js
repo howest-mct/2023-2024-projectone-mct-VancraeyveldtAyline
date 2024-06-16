@@ -87,6 +87,29 @@ const listenToSocket = function () {
   socketio.on('connect', function () {
     console.log('Verbonden met socket webserver');
   });
+  socketio.on("B2F_light", function (data) {
+    if (sensor_history_page) {
+      let sensorData = [data.value, data.date, data.note];
+      // Get the table body
+      let tableBody = document.querySelector('.myTable2');
+      tableBody.deleteRow(-1);
+      // Insert new row at the top of the table
+      let rijHTML=voegRijToe(sensorData,"his2");
+      tableBody.innerHTML=rijHTML+tableBody.innerHTML;
+    }
+  })
+
+  socketio.on("B2F_barcode", function (data) {
+    if (sensor_history_page) {
+      let sensorData = [data.value, data.date, data.note];
+      // Get the table body
+      let tableBody = document.querySelector('.myTable1');
+      tableBody.deleteRow(-1);
+      // Insert new row at the top of the table
+      let rijHTML=voegRijToe(sensorData,"his1");
+      tableBody.innerHTML=rijHTML+tableBody.innerHTML;
+    }
+  })
 
   socketio.on("B2F_joystick", function (data) {
     if (sensor_history_page) {

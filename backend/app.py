@@ -289,7 +289,6 @@ def check_button():
             press_start_time = None  # Reset de timer als de knop wordt losgelaten
         time.sleep(0.1)  # Controleer elke 100 ms
 
-
 def check_joystick_movement(x_pos, y_pos):
     global is_neolight, current_number, is_barcode
     if abs(x_pos - CENTER_JOY) > abs(y_pos - CENTER_JOY):
@@ -317,6 +316,9 @@ def check_joystick_movement(x_pos, y_pos):
                     time.sleep(0.2)
                 DataRepository.insert_values_historiek(3, y_pos, 'y_pos: up')
                 socketio.emit("B2F_ypos_up", {"sensor": 3, "pos": y_pos, "message": 'y-pos: up'})
+                record = DataRepository.read_latest_record_historiek_by_id(3)
+                formatted_date = record["tijdstip_waarde"].strftime('%Y-%m-%d %H:%M:%S')
+                socketio.emit("B2F_joystick", {"value": record["waarde"], "date":formatted_date, "note":record["opmerking"]})
             elif (y_pos > (CENTER_JOY + THRESHOLD_JOY)):
                 print('Going Down')
                 if current_number > MIN_NUMBER_LCD:
@@ -325,6 +327,9 @@ def check_joystick_movement(x_pos, y_pos):
                     time.sleep(0.2)
                 DataRepository.insert_values_historiek(3, y_pos, 'y_pos: down')
                 socketio.emit("B2F_ypos_down", {"sensor": 3, "pos": y_pos, "message": 'y-pos: down'})
+                record = DataRepository.read_latest_record_historiek_by_id(3)
+                formatted_date = record["tijdstip_waarde"].strftime('%Y-%m-%d %H:%M:%S')
+                socketio.emit("B2F_joystick", {"value": record["waarde"], "date":formatted_date, "note":record["opmerking"]})
 
 def check_lightsensor_activity(light_value):
     global is_open
@@ -333,11 +338,18 @@ def check_lightsensor_activity(light_value):
             is_open = True  
             DataRepository.insert_values_historiek(1, light_value, 'opened')
             socketio.emit("B2F_light_open", {"sensor": 1, "value": light_value, "message": 'opened'})
+            record = DataRepository.read_latest_record_historiek_by_id(1)
+            formatted_date = record["tijdstip_waarde"].strftime('%Y-%m-%d %H:%M:%S')
+            socketio.emit("B2F_light", {"value": record["waarde"], "date":formatted_date, "note":record["opmerking"]})
+
     elif light_value >= THRESHOLD_LIGHT:
         if is_open == True:
             is_open = False
             DataRepository.insert_values_historiek(1, light_value, 'closed')
             socketio.emit("B2F_light_close", {"sensor": 1, "value": light_value, "message": 'closed'})
+            record = DataRepository.read_latest_record_historiek_by_id(1)
+            formatted_date = record["tijdstip_waarde"].strftime('%Y-%m-%d %H:%M:%S')
+            socketio.emit("B2F_light", {"value": record["waarde"], "date":formatted_date, "note":record["opmerking"]})
 
 def colorWipe(strip, color, wait_ms=50):
     """Wipe color across display a pixel at a time."""
@@ -381,6 +393,10 @@ def read_barcode():
         print(f"Received: {str(barcode)}")
         lcd.send_instruction(0x01)  # Clear display
         lcd.send_instruction(0x80)  # Move cursor to the first line
+
+        record = DataRepository.read_latest_record_historiek_by_id(2)
+        formatted_date = record["tijdstip_waarde"].strftime('%Y-%m-%d %H:%M:%S')
+        socketio.emit("B2F_barcode", {"value": record["waarde"], "date":formatted_date, "note":record["opmerking"]})
 
         if DataRepository.read_product_name_by_barcode(barcode) == None:
             print('not found')
