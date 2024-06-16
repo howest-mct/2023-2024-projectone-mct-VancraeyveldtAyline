@@ -161,7 +161,7 @@ BUTTON_IPS = 17
 BUTTON_SHUTDOWN = 27
 CENTER_JOY = 775
 THRESHOLD_JOY = 200
-THRESHOLD_LIGHT = 250
+THRESHOLD_LIGHT = 100
 MIN_NUMBER_LCD = -20
 MAX_NUMBER_LCD = 20
 
@@ -374,6 +374,7 @@ def main_loop():
         joystick_x_value = mcp3008.read_channel(JOYSTICK_CHANNEL_X)
         joystick_y_value = mcp3008.read_channel(JOYSTICK_CHANNEL_Y)
         light_value = mcp3008.read_channel(LIGHT_CHANNEL)
+        # print(light_value)
         check_joystick_movement(joystick_x_value, joystick_y_value)
         check_lightsensor_activity(light_value)
         neopixelring() 
