@@ -137,17 +137,24 @@ def change_buzzer(status):
     global is_buzzer
     is_buzzer = status['status']
     DataRepository.update_voorkeur(4, 1, "buzzer_status", status['status'])
+    if is_buzzer == 1:
+            GPIO.output(BUZZER_PIN, GPIO.HIGH)
+            time.sleep(0.1)
+            GPIO.output(BUZZER_PIN, GPIO.LOW)
 
 @socketio.on("F2B_lighting")
 def change_color(color):
-    global lighting_color
+    global lighting_color, is_neolight
     lighting_color = color['color']
     if lighting_color == 'green':
         DataRepository.update_voorkeur(5, 1, "lighting_color", 1)
+        is_neolight = True
     if lighting_color == 'blue':
         DataRepository.update_voorkeur(5, 1, "lighting_color", 2)
+        is_neolight = True
     if lighting_color == 'red':
         DataRepository.update_voorkeur(5, 1, "lighting_color", 3)
+        is_neolight = True
 
 
 
