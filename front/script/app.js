@@ -1,27 +1,212 @@
 const lanIP = `${window.location.hostname}:5000`;
 const socketio = io(`http://${lanIP}`);
+let buttons;
+let rows_to_be_loaded_sensor_barcode = 10;
+let rows_to_be_loaded_sensor_light = 10;
+let rows_to_be_loaded_sensor_joy = 10;
+let rows_to_be_loaded_product = 10;
+let storedProductHistory;
+let storedBarcodeHistory;
+let storedLightHistory;
+let storedJoyHistory;
+
+
 
 const listenToUI = function () {
-  loadMoreBtn = document.querySelector('load-more-btn');
+
+  const shutdownBtn = document.querySelector('.shutdown-btn');
+  if (shutdownBtn) {
+    shutdownBtn.addEventListener('click', function () {
+      console.log('SHUTTING DOWN')
+      socketio.emit("F2B_shutdown", {"status":1})
+    })
+  }
+
+  const loadMoreBtnBar = document.querySelector('.btn__barcode');
+  if (loadMoreBtnBar) {
+    loadMoreBtnBar.addEventListener('click', function () {
+      console.log('Button was clicked!');
+      rows_to_be_loaded_sensor_barcode = 5;
+      showSensorHistoryBarcode(storedBarcodeHistory);
+  })
+ } else {
+    console.error('Button not found!');
+  }
+
+  const loadMoreBtnLight = document.querySelector('.btn__light');
+  if (loadMoreBtnLight) {
+    loadMoreBtnLight.addEventListener('click', function () {
+      console.log('Button was clicked!');
+      rows_to_be_loaded_sensor_light = 5;
+      showSensorHistoryLight(storedLightHistory);
+  })
+ } else {
+    console.error('Button not found!');
+  }
+
+  const loadMoreBtnJoy = document.querySelector('.btn__joy');
+  if (loadMoreBtnJoy) {
+    loadMoreBtnJoy.addEventListener('click', function () {
+      console.log('Button was clicked!');
+      rows_to_be_loaded_sensor_joy = 5;
+      showSensorHistoryJoy(storedJoyHistory);
+  })
+ } else {
+    console.error('Button not found!');
+  }
+
+  const loadMoreBtnProd = document.querySelector('.btn__product');
+  if (loadMoreBtnProd) {
+    loadMoreBtnProd.addEventListener('click', function () {
+      console.log('Button was clicked!');
+      rows_to_be_loaded_sensor_joy = 5;
+      showProductHistory(storedProductHistory);
+  })
+ } else {
+    console.error('Button not found!');
+  }
+
+
+  buttons = document.querySelectorAll('.toggle-button'); // Definieer buttons hier
+  buttons.forEach(button => {
+      button.addEventListener('click', function () {
+          // Verwijder 'active' class van alle knoppen
+          buttons.forEach(btn => {
+              btn.classList.remove('active');
+          });
+          // Voeg 'active' class toe aan de geklikte knop
+          button.classList.add('active');
+          const color = button.classList[1]; // Verkrijg kleur van geklikte knop
+          console.log(color);
+          socketio.emit("F2B_lighting", {"color": color}); // Stuur kleur naar backend
+      });
+  });
 };
 
 const listenToSocket = function () {
   socketio.on('connect', function () {
     console.log('Verbonden met socket webserver');
   });
+  socketio.on("B2F_light", function (data) {
+    if (sensor_history_page) {
+      let sensorData = [data.value, data.date, data.note];
+      // Get the table body
+      let tableBody = document.querySelector('.myTable2');
+      tableBody.deleteRow(-1);
+      // Insert new row at the top of the table
+      let rijHTML=voegRijToe(sensorData,"his2");
+      tableBody.innerHTML=rijHTML+tableBody.innerHTML;
+    }
+  })
 
-  // Voeg hier meer socket event listeners toe, indien nodig
+  socketio.on("B2F_barcode", function (data) {
+    if (sensor_history_page) {
+      let sensorData = [data.value, data.date, data.note];
+      // Get the table body
+      let tableBody = document.querySelector('.myTable1');
+      tableBody.deleteRow(-1);
+      // Insert new row at the top of the table
+      let rijHTML=voegRijToe(sensorData,"his1");
+      tableBody.innerHTML=rijHTML+tableBody.innerHTML;
+    }
+  })
+
+  socketio.on("B2F_joystick", function (data) {
+    if (sensor_history_page) {
+      let sensorData = [data.value, data.date, data.note];
+      // Get the table body
+      let tableBody = document.querySelector('.myTable3');
+      tableBody.deleteRow(-1);
+      // Insert new row at the top of the table
+      let rijHTML=voegRijToe(sensorData,"his3");
+      tableBody.innerHTML=rijHTML+tableBody.innerHTML;
+    }
+  })
+
+  socketio.on('B2F_product_change', function (data) {
+    console.log('Product change received:', data);
+    if (product_history_page) {
+
+      let productData = [data.name, data.category, data.date, data.change];
+      // Get the table body
+      let tableBody = document.querySelector('.myTable');
+      // Remove the last row
+        tableBody.deleteRow(-1);
+      // Insert new row at the top of the table
+      let rijHTML=voegRijToe(productData,"prodhis");
+      tableBody.innerHTML=rijHTML+tableBody.innerHTML;
+      //voegRijToe(productData, 'prodhis');
+
+    }
+  });
+
+  socketio.on('B2F_lighting', function (object) {
+    let lighting_color = object.color; // Ontvangen kleur van backend
+    // Verwijder 'active' class van alle knoppen (gebruik buttons hier)
+    buttons.forEach(btn => {
+        btn.classList.remove('active');
+    });
+    // Voeg 'active' class toe aan knop met overeenkomende kleur
+    const current_color = document.querySelector("." + lighting_color);
+    if (current_color) {
+        current_color.classList.add('active');
+    }
+});
+
+  socketio.on('B2F_light_open', function (object) {
+    console.log(object)
+    const door_icon = document.querySelector(".door");
+    let iconHTML;
+    iconHTML = `
+        <div class="door">
+          <img src="Icons/door_open_24dp_FILL0_wght400_GRAD0_opsz24 1.svg" alt="open door icon" class="door__img">
+        </div>
+      `;
+    if (door_icon) {
+      door_icon.outerHTML = iconHTML;
+    }
+  });
+
+  socketio.on('B2F_light_close', function (object) {
+    console.log(object)
+    const door_icon = document.querySelector(".door");
+    let iconHTML;
+    iconHTML = `
+        <div class="door">
+          <img src="Icons/door_front_24dp_FILL0_wght400_GRAD0_opsz24 1.svg" alt="closed door icon" class="door__img">
+        </div>
+      `;
+    if (door_icon) {
+      door_icon.outerHTML = iconHTML;
+    }
+  })
+  socketio.on("B2F_xpos_left", function (object) {
+    console.log(object)
+  })
+
+  socketio.on('B2F_set_switch', function (data) {
+    // console.log("B2F_set_switch event received:", data);
+    const toggleSwitch = document.querySelector('.toggleSwitch');
+    if (toggleSwitch) {
+      toggleSwitch.checked = data.status;
+      if (data.status) {
+        console.log('Switch is set to ON');
+      } else {
+        console.log('Switch is set to OFF');
+      }
+    } else {
+      console.error("Toggle switch element not found.");
+    }
+  });
 };
 
 function listenToDropdown() {
   document.getElementById('myDropdown').classList.toggle('show');
-  // Close the dropdown menu if the user clicks outside of it
   window.onclick = function (event) {
     if (!event.target.matches('.dropbtn')) {
-      var dropdowns = document.getElementsByClassName('dropdown-content');
-      var i;
-      for (i = 0; i < dropdowns.length; i++) {
-        var openDropdown = dropdowns[i];
+      const dropdowns = document.getElementsByClassName('dropdown-content');
+      for (let i = 0; i < dropdowns.length; i++) {
+        const openDropdown = dropdowns[i];
         if (openDropdown.classList.contains('show')) {
           openDropdown.classList.remove('show');
         }
@@ -30,57 +215,68 @@ function listenToDropdown() {
   };
 }
 
-
-
 function myFunction() {
-  // Declare variables
-  var input, filter, table, tr, td, i, j, txtValue;
-  input = document.querySelector('.search-bar');
-  filter = input.value.toUpperCase();
-  table = document.querySelector('.myTable');
-  tr = table.getElementsByTagName('tr');
+  const input = document.querySelector('.search-bar');
+  const filter = input.value.toUpperCase();
+  const table = document.querySelector('.myTable');
+  const tr = table.getElementsByTagName('tr');
 
-  // Loop through all table rows, and hide those who don't match the search query
-  for (i = 0; i < tr.length; i++) {
-    tr[i].style.display = 'none'; // Hide the row initially
-    td = tr[i].getElementsByTagName('td');
-    for (j = 0; j < td.length; j++) {
+  for (let i = 0; i < tr.length; i++) {
+    tr[i].style.display = 'none';
+    const td = tr[i].getElementsByTagName('td');
+    for (let j = 0; j < td.length; j++) {
       if (td[j]) {
-        txtValue = td[j].textContent || td[j].innerText;
+        const txtValue = td[j].textContent || td[j].innerText;
         if (txtValue.toUpperCase().indexOf(filter) > -1) {
           tr[i].style.display = '';
-          break; // Break the loop once a match is found
+          break;
         }
       }
     }
   }
 }
-
 const listenToSwitch = function() {
-  document.querySelector('.toggleSwitch').addEventListener('change', function () {
-    if (this.checked) {
-      console.log('Switch is ON');
-      // Voeg hier je logica toe voor wanneer de switch aan staat
-    } else {
-      console.log('Switch is OFF');
-      // Voeg hier je logica toe voor wanneer de switch uit staat
-    }
-  });
+  const toggleSwitch = document.querySelector('.toggleSwitch');
+  if (toggleSwitch) {
+    toggleSwitch.addEventListener('change', function () {
+      if (this.checked) {
+        console.log('Switch is ON');
+        socketio.emit("F2B_buzzer", {"status":1});
+      } else {
+        console.log('Switch is OFF');
+        socketio.emit("F2B_buzzer", {"status":0});
+      }
+    });
+  }
+};
+
+const getRowCountFromTable = function (className) {
+  tableBody = document.querySelector('.'+className);
+  console.log(tableBody.childElementCount)
+  return tableBody.childElementCount
+}
+  
+const updateHTML = function (className, htmlcontent) {
+  tableBody = document.querySelector('.'+className);
+  tableBody.innerHTML=htmlcontent;
 }
 
 const voegRijToe = function (data, type) {
-  console.log("data:" + data)
+  // console.log("data:", data);
   let rijHTML = ``;
-  if (type == 'inv') {
-    const tableBody = document.querySelector('.myTable');
+  let tableBody;
+
+  if (type === 'inv') {
+    tableBody = document.querySelector('.myTable');
     if (data[3] < data[4]) {
       rijHTML += `<tr class="below-min">`;
       for (let i of data) {
-        if (i == data[3]) {
-          rijHTML += `<td class="below-min__quantity">${i}</td>`;
-        } else {
-          rijHTML += `<td>${i}</td>`;
-        }
+          if (i == data[3]) {
+              rijHTML += `<td class="below-min__quantity">${i}</td>`;
+            } 
+          else {
+              rijHTML += `<td>${i}</td>`;
+            }
       }
       rijHTML += `</tr>`;
     } else {
@@ -90,37 +286,41 @@ const voegRijToe = function (data, type) {
       }
       rijHTML += `</tr>`;
     }
-    tableBody.insertAdjacentHTML('beforeend', rijHTML);
-  }
-  if (type == 'his1') {
-    const tableBody = document.querySelector('.myTable1');
-    rijHTML = `<tr>`;
-      for (let i of data) {
-        rijHTML += `<td>${i}</td>`;
-      }
+  } 
+  
+  else if (type === 'his1') {
+    tableBody = document.querySelector('.myTable1');
+    rijHTML += `<tr>`;
+    for (let i of data) {
+      rijHTML += `<td>${i}</td>`;
+    }
     rijHTML += `</tr>`;
-    tableBody.insertAdjacentHTML('beforeend', rijHTML);
-  }
-  if (type == 'his2') {
-    const tableBody = document.querySelector('.myTable2');
+  } 
+  
+  
+  else if (type === 'his2') {
+    tableBody = document.querySelector('.myTable2');
     rijHTML = `<tr>`;
-      for (let i of data) {
-        rijHTML += `<td>${i}</td>`;
-      }
+    for (let i of data) {
+      rijHTML += `<td>${i}</td>`;
+    }
     rijHTML += `</tr>`;
-    tableBody.insertAdjacentHTML('beforeend', rijHTML);
   }
-  if (type == 'his3') {
-    const tableBody = document.querySelector('.myTable3');
+
+  
+  else if (type === 'his3') {
+    
+    tableBody = document.querySelector('.myTable3');
     rijHTML = `<tr>`;
-      for (let i of data) {
-        rijHTML += `<td>${i}</td>`;
-      }
+    for (let i of data) {
+      rijHTML += `<td>${i}</td>`;
+    }
     rijHTML += `</tr>`;
-    tableBody.insertAdjacentHTML('beforeend', rijHTML);
-  }
-  if (type == 'prodhis') {
-    const tableBody = document.querySelector('.myTable');
+  } 
+  
+  else if (type === 'prodhis') {
+    console.log("INSERT WORKS")
+    tableBody = document.querySelector('.myTable');
     if (data[3] < 0) {
       rijHTML = `<tr class="row-negative">`;
       for (let i of data) {
@@ -142,18 +342,20 @@ const voegRijToe = function (data, type) {
       }
     }
     rijHTML += `</tr>`;
-    tableBody.insertAdjacentHTML('beforeend', rijHTML);
-  }
-  if (type == 'cart') {
-    const tableBody = document.querySelector('.myTable');
-      rijHTML = `<tr>`;
-      for (let i of data) {
-        rijHTML += `<td>${i}</td>`;
-      }
+  } 
+  
+  else if (type === 'cart') {
+    tableBody = document.querySelector('.myTable');
+    rijHTML = `<tr>`;
+    for (let i of data) {
+      rijHTML += `<td>${i}</td>`;
+    }
     rijHTML += `</tr>`;
-    tableBody.insertAdjacentHTML('beforeend', rijHTML);
-    
-    
+  }
+
+  if (tableBody) {
+    // tableBody.insertAdjacentHTML('beforeend', rijHTML);
+    return rijHTML
   }
 };
 
@@ -161,6 +363,7 @@ const showInventory = function (inventory) {
   try {
     console.log('Inventory ontvangen:', inventory);
     if (inventory && inventory.inventory) {
+      let contentHTML = '';
       for (let product of inventory.inventory) {
         let data = [
           product.product_naam,
@@ -169,8 +372,10 @@ const showInventory = function (inventory) {
           product.totaal_aantal,
           product.minimum_waarde,
         ];
-        voegRijToe(data, 'inv');
+        console.log('works2');
+        contentHTML += voegRijToe(data, 'inv');
       }
+      updateHTML('myTable', contentHTML);
     } else {
       console.error('Ongeldige records data ontvangen:', inventory);
     }
@@ -179,57 +384,110 @@ const showInventory = function (inventory) {
   }
 };
 
+
 const showSensorHistoryBarcode = function (history) {
   try {
+    storedBarcodeHistory = history;
+    let alldata = [];
     console.log('History ontvangen:', history);
     if (history && history.history) {
       for (let record of history.history) {
-        let data = [
-          record.waarde,
-          record.tijdstip_waarde,
-          record.opmerking
-        ];
-        voegRijToe(data, 'his1');
+        let data = [record.waarde, record.tijdstip_waarde, record.opmerking];
+        alldata.push(data);
       }
+      let contentHTML = '';
+      let nrExistingRows = getRowCountFromTable('myTable1');
+      let nrRowsInTable = nrExistingRows + rows_to_be_loaded_sensor_barcode;
+      for (let i = 0; i < nrRowsInTable; i++) {
+        contentHTML += voegRijToe(alldata[i], 'his1');
+        // voegRijToe(alldata[i], 'his1');
+      }
+      updateHTML('myTable1', contentHTML);
     } else {
       console.error('Ongeldige records data ontvangen:', history);
     }
   } catch (e) {
     console.log(e);
   }
-}
+};
+
 const showSensorHistoryLight = function (history) {
   try {
+    storedLightHistory = history;
+    let alldata = [];
     console.log('History ontvangen:', history);
     if (history && history.history) {
       for (let record of history.history) {
-        let data = [
-          record.waarde,
-          record.tijdstip_waarde,
-          record.opmerking
-        ];
-        voegRijToe(data, 'his2');
+        let data = [record.waarde, record.tijdstip_waarde, record.opmerking];
+        alldata.push(data);
       }
+      let contentHTML = '';
+      let nrExistingRows = getRowCountFromTable('myTable2');
+      let nrRowsInTable = nrExistingRows + rows_to_be_loaded_sensor_light;
+      for (let i = 0; i < nrRowsInTable; i++) {
+        contentHTML += voegRijToe(alldata[i], 'his2');
+      }
+      updateHTML('myTable2', contentHTML);
     } else {
       console.error('Ongeldige records data ontvangen:', history);
     }
   } catch (e) {
     console.log(e);
   }
-}
+};
+
 const showSensorHistoryJoy = function (history) {
   try {
+    storedJoyHistory = history;
+    let alldata = [];
     console.log('History ontvangen:', history);
     if (history && history.history) {
       for (let record of history.history) {
-        let data = [
-          record.waarde,
-          record.tijdstip_waarde,
-          record.opmerking
-        ];
-        voegRijToe(data, 'his3');
+        let data = [record.waarde, record.tijdstip_waarde, record.opmerking];
+        alldata.push(data);
       }
+      let contentHTML = '';
+      let nrExistingRows = getRowCountFromTable('myTable3');
+      let nrRowsInTable = nrExistingRows + rows_to_be_loaded_sensor_barcode;
+      for (let i = 0; i < nrRowsInTable; i++) {
+        contentHTML += voegRijToe(alldata[i], 'his3');
+      }
+      updateHTML('myTable3', contentHTML);
     } else {
+      console.error('Ongeldige records data ontvangen:', history);
+    }
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+const showProductHistory = function (history) {
+  try {
+    storedProductHistory = history
+    let alldata = []
+    console.log('History ontvangen:', history);
+    if (history && history.history) {
+        for (let record of history.history) {
+          let data = [
+            record.product_naam,
+            record.product_type,
+            record.tijdstip,
+            record.product_aantal_wijziging
+          ];
+          alldata.push(data)
+        }
+        let contentHTML = "";
+        let nrExistingRows=getRowCountFromTable("myTable");
+        let nrRowsInTable=nrExistingRows+rows_to_be_loaded_product;
+        for (let i = 0; i < nrRowsInTable; i++) {
+          contentHTML += voegRijToe(alldata[i], "prodhis")
+          console.log("date" +i+' '+ alldata[i][2])
+          // voegRijToe(alldata[i], "prodhis");
+        }
+        updateHTML("myTable", contentHTML);
+        console.log("UPDATE HTML")
+      }
+       else {
       console.error('Ongeldige records data ontvangen:', history);
     }
   } catch (e) {
@@ -237,58 +495,43 @@ const showSensorHistoryJoy = function (history) {
   }
 }
 
-const showProductHistory = function (history) {
-  try {
-    console.log('History ontvangen:', history);
-    if (history && history.history) {
-      for (let record of history.history) {
-        let data = [
-          record.product_naam,
-          record.product_type,
-          record.tijdstip, 
-          record.product_aantal_wijziging
-        ];
-        voegRijToe(data, 'prodhis');
-      }
-    } else {
-      console.error('Ongeldige records data ontvangen:', history);
-    }
-  } catch (e) {
-    console.log(e);
-  }
-}
+
+
 
 const showCart = function (cart) {
   try {
     console.log('Cart ontvangen:', cart);
     if (cart && cart.cart) {
-      for (let item of cart.cart) {
-        let data = [
-          item.product_naam,
-          item.product_type,
-          item.totaal_aantal
-        ];
-        voegRijToe(data, 'cart');
+      let contentHTML = '';
+      
+      if (cart.cart.length === 0) {
+        console.log('Cart is leeg');
+        let emptyCartData = ['---', '---', '---']; // Gegevens voor een lege winkelwagenrij
+        contentHTML += voegRijToe(emptyCartData, 'cart');
+      } else {
+        for (let item of cart.cart) {
+          let data = [item.product_naam, item.product_type, item.totaal_aantal];
+          contentHTML += voegRijToe(data, 'cart');
+        }
       }
-      console.log("data= "+ cart.cart)
-      console.log(cart.cart.length)
-      if (cart.cart.length == 0) {
-        console.log("WORKS")
-        data = ["---", "---", "---"]
-        voegRijToe(data, "cart")
-      }
+      
+      updateHTML('myTable', contentHTML);
+      
     } else {
       console.error('Ongeldige records data ontvangen:', cart);
     }
   } catch (e) {
     console.log(e);
   }
-}
+};
+
+
 
 
 const getInventory = function () {
   const url = `http://${lanIP}/inventory/`;
   handleData(url, showInventory);
+  console.log('works1')
 };
 const getSensorHistoryBarcode = function () {
   const url = `http://${lanIP}/historiek/2/`;
@@ -322,13 +565,13 @@ const init = function () {
   product_history_page = document.querySelector('.js-product-history');
 
   listenToUI();
+  listenToSwitch()
   listenToSocket();
   if (inventory_page) {
     getInventory();
     listenToDropdown();
   }
   if (settings_page) {
-    listenToSwitch()
   }
   if (cart_page) {
     getCart()

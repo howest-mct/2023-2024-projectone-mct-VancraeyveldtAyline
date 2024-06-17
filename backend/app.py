@@ -10,6 +10,9 @@ from lcd import LCD_Display
 from mcp3008 import MCP3008
 from rpi_ws281x import PixelStrip, Color
 import serial
+from datetime import datetime
+import os
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'HELLOTHISISSCERET'
@@ -52,9 +55,6 @@ def get_products_under():
             return jsonify(cart=cart), 200
         else:
             return jsonify(message="error"), 404
-
-
-
 
 # ****************** HISTORIEK ******************   
 @app.route('/historiek/', methods=['GET'])
@@ -117,11 +117,48 @@ def get_type_by_id(typeid):
 # SOCKET IO
 @socketio.on('connect')
 def initial_connection():
+    global is_buzzer
+    if is_buzzer == 1:
+        socketio.emit('B2F_set_switch', {'status': True})
+    elif is_buzzer == 0:
+        socketio.emit('B2F_set_switch', {'status': False})
+    first_check_door()
+    socketio.emit('B2F_lighting', {'color': lighting_color})
     print('A new client connect')
+
+@socketio.on("F2B_shutdown")
+def shutdown(status):
+    if status.status == 1:
+        os.system("sudo poweroff")
+
+
+@socketio.on("F2B_buzzer")
+def change_buzzer(status):
+    global is_buzzer
+    is_buzzer = status['status']
+    DataRepository.update_voorkeur(4, 1, "buzzer_status", status['status'])
+    if is_buzzer == 1:
+            GPIO.output(BUZZER_PIN, GPIO.HIGH)
+            time.sleep(0.1)
+            GPIO.output(BUZZER_PIN, GPIO.LOW)
+
+@socketio.on("F2B_lighting")
+def change_color(color):
+    global lighting_color, is_neolight
+    lighting_color = color['color']
+    if lighting_color == 'green':
+        DataRepository.update_voorkeur(5, 1, "lighting_color", 1)
+        is_neolight = True
+    if lighting_color == 'blue':
+        DataRepository.update_voorkeur(5, 1, "lighting_color", 2)
+        is_neolight = True
+    if lighting_color == 'red':
+        DataRepository.update_voorkeur(5, 1, "lighting_color", 3)
+        is_neolight = True
+
 
 
 # *************** HARDWARE ***************
-
 
 # Constant values
 BUZZER_PIN = 22
@@ -136,7 +173,7 @@ BUTTON_IPS = 17
 BUTTON_SHUTDOWN = 27
 CENTER_JOY = 775
 THRESHOLD_JOY = 200
-THRESHOLD_LIGHT = 850
+THRESHOLD_LIGHT = 400
 MIN_NUMBER_LCD = -20
 MAX_NUMBER_LCD = 20
 
@@ -156,32 +193,47 @@ lcd = LCD_Display(RS=LCD_RS_PIN, E=LCD_E_PIN, data_pins=LCD_DATA_PINS)
 strip = PixelStrip(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
 strip.begin()
 ser = serial.Serial(
-    port='/dev/ttyUSB0',  # Gebruik /dev/ttyS0 voor oudere RPi-modellen
+    port='/dev/ttyUSB0',
     baudrate=9600,
     timeout=1
 )
 
 # Global variables
-joystick_press_count = 0
+is_buzzer = (DataRepository.read_voorkeur_by_description("buzzer_status"))["voorkeur_waarde"]
 is_add = True
 is_open = False
 is_neolight = False
 is_barcode = False
 current_number = 1
 barcode = ''
+required_press_time = 3
+press_start_time = None
 
+lighting_color_value = (DataRepository.read_voorkeur_by_description("lighting_color"))["voorkeur_waarde"]
+if lighting_color_value == 1:
+    lighting_color = "green"
+if lighting_color_value == 2:
+    lighting_color = "blue"
+if lighting_color_value == 3:
+    lighting_color = "red"
 
 def callback_btn_joy(pin):
-    global joystick_press_count, is_barcode, current_number, barcode
-    joystick_press_count += 1
-    print(f"The joystick has been pressed {joystick_press_count} times!")
+    global is_barcode, current_number, barcode, is_buzzer, is_neolight
     if is_barcode == True:
         DataRepository.insert_values_product_historiek(current_number, barcode)
         lcd.send_instruction(0x01)  # Clear display
         lcd.send_instruction(0x80)
         lcd.send_text("Succes!")
+        if is_buzzer == 1:
+            GPIO.output(BUZZER_PIN, GPIO.HIGH)
+            time.sleep(0.1)
+            GPIO.output(BUZZER_PIN, GPIO.LOW)
         time.sleep(1)
+        product = DataRepository.read_product_historiek_by_barcode(barcode)
+        formatted_date = product["tijdstip"].strftime('%Y-%m-%d %H:%M:%S')
+        socketio.emit("B2F_product_change", {"name": product["product_naam"], "category":product["product_type"], "date":formatted_date, "change":product["product_aantal_wijziging"]})
         is_barcode = False
+        is_neolight = True
         display_text()
 
 def setup():
@@ -195,28 +247,15 @@ def setup():
     GPIO.setup(BUTTON_IPS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.add_event_detect(BUTTON_IPS, GPIO.FALLING, callback=callback_btn_ips, bouncetime=300)
     GPIO.setup(BUTTON_SHUTDOWN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    GPIO.add_event_detect(BUTTON_SHUTDOWN, GPIO.FALLING, callback=callback_btn_shut, bouncetime=300)
 
 def get_ip_addresses():
     ips = check_output(['hostname', '--all-ip-addresses']).decode('utf-8').strip().split()
     return ips
 
 def display_text():
-    global is_add
     lcd.send_instruction(0x01)  # Clear display
     lcd.send_instruction(0x80)  # Move cursor to the first line
     lcd.send_text("Welcome back!")
-
-    # lcd.scroll_text("This is a very long message that needs to scroll ", line=0, delay=0.3)
-    
-    # lcd.send_text(4*(' ')+('+')+(6*' ')+('-')+4*(' '))
-    # lcd.send_instruction(0xC0)
-    # if is_add == True:
-    #     lcd.send_text(3*(' ')+'(*)' + 4*' ' + '( )'+3*(' '))
-    #     # colorWipe(strip, Color(0, 0, 0))
-    # elif is_add == False:
-    #     lcd.send_text(3*(' ')+'( )' + 4*' ' + '(*)'+3*(' '))
-    #     # colorWipe(strip, Color(0, 0, 0))
 
 def callback_btn_ips(pin):
     ips = get_ip_addresses()
@@ -225,7 +264,7 @@ def callback_btn_ips(pin):
     lcd.send_text("First IP:")  # Send a title to the first line
     lcd.send_instruction(0xC0)  # Move cursor to the second line
     lcd.send_text(ips[0])
-    time.sleep(4)  # Wacht 1 seconde
+    time.sleep(4)
     lcd.send_instruction(0x01)  # Clear display
     lcd.send_instruction(0x80)  # Move cursor to the first line
     lcd.send_text("Second IP:")  # Send a title to the first line
@@ -234,66 +273,107 @@ def callback_btn_ips(pin):
     time.sleep(4)
     display_text()
 
-def callback_btn_shut(pin):
-    lcd.send_instruction(0x01)  # Clear display
-    lcd.send_instruction(0x80)  # Move cursor to the first line
-    lcd.send_text("It's a Shutdown")
-    time.sleep(4)  # Wacht 1 seconde
-    display_text()
+def check_button():
+    global press_start_time
+    while True:
+        if GPIO.input(BUTTON_SHUTDOWN) == GPIO.LOW: 
+            if press_start_time is None:
+                press_start_time = time.time()
+            elif time.time() - press_start_time >= required_press_time:
+                lcd.send_instruction(0x01) 
+                lcd.send_instruction(0x80)
+                lcd.send_text("It's a Shutdown")
+                os.system("sudo poweroff")
+                press_start_time = None 
+        else: 
+            press_start_time = None
+        time.sleep(0.1)  
 
 def check_joystick_movement(x_pos, y_pos):
     global is_neolight, current_number, is_barcode
     if abs(x_pos - CENTER_JOY) > abs(y_pos - CENTER_JOY):
         if (x_pos < (CENTER_JOY - THRESHOLD_JOY)):
-            print('Going Left')
-            is_neolight = True
             DataRepository.insert_values_historiek(3, x_pos, 'x-pos: left')
+            socketio.emit("B2F_xpos_left", {"sensor": 3, "pos": x_pos, "message": 'x-pos: left'})
+            record = DataRepository.read_latest_record_historiek_by_id(3)
+            formatted_date = record["tijdstip_waarde"].strftime('%Y-%m-%d %H:%M:%S')
+            socketio.emit("B2F_joystick", {"value": record["waarde"], "date":formatted_date, "note":record["opmerking"]})
         elif (x_pos > (CENTER_JOY + THRESHOLD_JOY)):
-            print('Going Rigth')
-            is_neolight = True
-            DataRepository.insert_values_historiek(3, x_pos, 'x-pos: rigth')
+            DataRepository.insert_values_historiek(3, x_pos, 'x-pos: right')
+            socketio.emit("B2F_xpos_right", {"sensor": 3, "pos": x_pos, "message": 'x-pos: right'})
+            record = DataRepository.read_latest_record_historiek_by_id(3)
+            formatted_date = record["tijdstip_waarde"].strftime('%Y-%m-%d %H:%M:%S')
+            socketio.emit("B2F_joystick", {"value": record["waarde"], "date":formatted_date, "note":record["opmerking"]})
     else:
-        if (y_pos < (CENTER_JOY - THRESHOLD_JOY)):
-            print('Going Up')
-            if is_barcode == True:
+        while is_barcode == True:
+            x_pos = mcp3008.read_channel(JOYSTICK_CHANNEL_X)
+            y_pos = mcp3008.read_channel(JOYSTICK_CHANNEL_Y)
+            if (y_pos < (CENTER_JOY - THRESHOLD_JOY)):
                 if current_number < MAX_NUMBER_LCD:
                     current_number += 1
                     display_number(current_number)
-            DataRepository.insert_values_historiek(3, y_pos, 'y_pos: up')
-        elif (y_pos > (CENTER_JOY + THRESHOLD_JOY)):
-            print('Going Down')
-            if is_barcode == True:
+                    time.sleep(0.2)
+                DataRepository.insert_values_historiek(3, y_pos, 'y_pos: up')
+                socketio.emit("B2F_ypos_up", {"sensor": 3, "pos": y_pos, "message": 'y-pos: up'})
+                record = DataRepository.read_latest_record_historiek_by_id(3)
+                formatted_date = record["tijdstip_waarde"].strftime('%Y-%m-%d %H:%M:%S')
+                socketio.emit("B2F_joystick", {"value": record["waarde"], "date":formatted_date, "note":record["opmerking"]})
+            elif (y_pos > (CENTER_JOY + THRESHOLD_JOY)):
                 if current_number > MIN_NUMBER_LCD:
                     current_number -= 1
                     display_number(current_number)
-            DataRepository.insert_values_historiek(3, y_pos, 'y_pos: down')
-
+                    time.sleep(0.2)
+                DataRepository.insert_values_historiek(3, y_pos, 'y_pos: down')
+                socketio.emit("B2F_ypos_down", {"sensor": 3, "pos": y_pos, "message": 'y-pos: down'})
+                record = DataRepository.read_latest_record_historiek_by_id(3)
+                formatted_date = record["tijdstip_waarde"].strftime('%Y-%m-%d %H:%M:%S')
+                socketio.emit("B2F_joystick", {"value": record["waarde"], "date":formatted_date, "note":record["opmerking"]})
 
 def check_lightsensor_activity(light_value):
     global is_open
     if light_value < THRESHOLD_LIGHT:
         if is_open == False:
-            print("Kast is geopend")
-            is_open = True
+            is_open = True  
             DataRepository.insert_values_historiek(1, light_value, 'opened')
+            socketio.emit("B2F_light_open", {"sensor": 1, "value": light_value, "message": 'opened'})
+            record = DataRepository.read_latest_record_historiek_by_id(1)
+            formatted_date = record["tijdstip_waarde"].strftime('%Y-%m-%d %H:%M:%S')
+            socketio.emit("B2F_light", {"value": record["waarde"], "date":formatted_date, "note":record["opmerking"]})
+
     elif light_value >= THRESHOLD_LIGHT:
         if is_open == True:
-            print("Kast is gesloten")
             is_open = False
             DataRepository.insert_values_historiek(1, light_value, 'closed')
+            socketio.emit("B2F_light_close", {"sensor": 1, "value": light_value, "message": 'closed'})
+            record = DataRepository.read_latest_record_historiek_by_id(1)
+            formatted_date = record["tijdstip_waarde"].strftime('%Y-%m-%d %H:%M:%S')
+            socketio.emit("B2F_light", {"value": record["waarde"], "date":formatted_date, "note":record["opmerking"]})
 
 def colorWipe(strip, color, wait_ms=50):
-    """Wipe color across display a pixel at a time."""
     for i in range(strip.numPixels()):
         strip.setPixelColor(i, color)
         strip.show()
         time.sleep(wait_ms / 1000.0)
-        
+
+def set_color(strip, color):
+    if color == "none":
+        color_value = Color(0,0,0)
+    if color == "green":
+        color_value = Color(0,255,0)
+    if color == "red":
+        color_value = Color(255,0,0)
+    if color == "blue":
+        color_value = Color(0,0,255)
+    for i in range(strip.numPixels()):
+        strip.setPixelColor(i, color_value)
+    strip.show()
+
 def neopixelring():
     global is_neolight
     if is_neolight == True:
-        colorWipe(strip, Color(255, 255, 255))
-        colorWipe(strip, Color(0, 0, 0))
+        set_color(strip, lighting_color)
+        time.sleep(0.5)
+        set_color(strip, "none")
         is_neolight = False
 
 def display_number(number):
@@ -304,24 +384,29 @@ def display_number(number):
 def read_barcode():
     global current_number, is_barcode, barcode
     if ser.in_waiting > 0:
-        is_barcode = True
         line = ser.readline()
         barcode = line.decode().rstrip()
         DataRepository.insert_values_historiek(2, barcode, "barcode gescant")
-        print(f"Received: {str(barcode)}")
         lcd.send_instruction(0x01)  # Clear display
         lcd.send_instruction(0x80)  # Move cursor to the first line
-        product_name_object = DataRepository.read_product_name_by_barcode(barcode)
-        product_name = product_name_object['product_naam']
-        print(product_name)
-        lcd.send_text(product_name)
-        lcd.send_instruction(0xC0)
-        current_number = 1
-        display_number(current_number)
-        
-        
 
-        # DataRepository.insert_values_product_historiek(-2, line.decode().rstrip())
+        record = DataRepository.read_latest_record_historiek_by_id(2)
+        formatted_date = record["tijdstip_waarde"].strftime('%Y-%m-%d %H:%M:%S')
+        socketio.emit("B2F_barcode", {"value": record["waarde"], "date":formatted_date, "note":record["opmerking"]})
+
+        if DataRepository.read_product_name_by_barcode(barcode) == None:
+            lcd.send_text('not found')
+            time.sleep(3)
+            display_text()
+        else:
+            is_barcode = True
+            product_name_object = DataRepository.read_product_name_by_barcode(barcode)
+            product_name = product_name_object['product_naam']
+            lcd.send_text(product_name)
+            time.sleep(3)
+            lcd.send_instruction(0xC0)
+            current_number = 1
+            display_number(current_number)
     time.sleep(0.1)
         
 def run_flask():
@@ -330,25 +415,34 @@ def run_flask():
 def main_loop():
     while True:
         joystick_x_value = mcp3008.read_channel(JOYSTICK_CHANNEL_X)
-        # print(joystick_x_value)
         joystick_y_value = mcp3008.read_channel(JOYSTICK_CHANNEL_Y)
-        # print(joystick_y_value)
         light_value = mcp3008.read_channel(LIGHT_CHANNEL)
-        # check_joystick_hor_movement(joystick_x_value)
-        # check_joystick_ver_movement(joystick_y_value)
         check_joystick_movement(joystick_x_value, joystick_y_value)
         check_lightsensor_activity(light_value)
-        neopixelring()  # Roep de neopixelringfunctie binnen de hoofdlus aan
+        neopixelring() 
         read_barcode()
         time.sleep(1)
 
+def first_check_door():
+    global is_open
+    light_value = mcp3008.read_channel(LIGHT_CHANNEL)
+    if light_value < THRESHOLD_LIGHT:
+        is_open = True
+        socketio.emit("B2F_light_open", {"sensor": 1, "value": light_value, "message": 'first check'})
+    elif light_value >= THRESHOLD_LIGHT:
+        is_open = False
+        socketio.emit("B2F_light_close", {"sensor": 1, "value": light_value, "message": 'first check'})
+
 try:
+    is_neolight = True
     setup()
     display_text()
     print("**** Starting APP ****")
+    button_thread = threading.Thread(target=check_button)
     flask_thread = threading.Thread(target=run_flask)
     main_thread = threading.Thread(target=main_loop)
-    # Verwijder de neo_thread omdat de functie in de hoofdlus wordt aangeroepen
+    button_thread.daemon = True
+    button_thread.start()
     flask_thread.start()
     main_thread.start()
     flask_thread.join()
@@ -357,5 +451,12 @@ except KeyboardInterrupt:
     print("Program terminated by user.")
 finally:
     GPIO.cleanup()
-    ser.close()
-    mcp3008.close()
+    # Zorg ervoor dat je ser en mcp3008 alleen sluit als ze bestaan
+    try:
+        ser.close()
+    except NameError:
+        pass
+    try:
+        mcp3008.close()
+    except NameError:
+        pass

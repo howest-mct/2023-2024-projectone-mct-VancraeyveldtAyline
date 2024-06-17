@@ -54,20 +54,21 @@ class DataRepository:
 
     @staticmethod
     def read_records_historiek_by_id(id):
-        sql = "SELECT * from Historiek WHERE device_id = %s"
+        sql = "SELECT * from Historiek WHERE device_id = %s Order by tijdstip_waarde desc;"
         params = [id]
         return Database.get_rows(sql, params)
+
+    @staticmethod
+    def read_latest_record_historiek_by_id(id):
+        sql = "SELECT * from Historiek WHERE device_id = %s Order by tijdstip_waarde desc limit 1"
+        params = [id]
+        return Database.get_one_row(sql, params)
     
     @staticmethod
     def read_records_historiek():
         sql = "SELECT * FROM Historiek as h inner join Devices as d on h.device_id = d.device_id"
         return Database.get_rows(sql)
-    
-    @staticmethod
-    def read_records_historiek_by_date(date: str):
-        sql = "SELECT * FROM Historiek WHERE DATE(tijdstip_waarde) = %s;"
-        params = [date]
-        return Database.get_rows(sql, params)
+
 
 
 # ****************** TYPES ******************
@@ -129,6 +130,13 @@ class DataRepository:
             p.product_naam;
         """
         return Database.get_rows(sql)
+    
+    @staticmethod
+    def read_product_barcodes():
+        sql = """
+        SELECT barcode FROM Producten;
+        """
+        return Database.get_rows(sql)
 
     @staticmethod
     def read_products_under():
@@ -178,6 +186,20 @@ class DataRepository:
         mysql_datetime_formaat = huidige_tijd.strftime('%Y-%m-%d %H:%M:%S')
         params = [wijziging, mysql_datetime_formaat, barcode]
         return Database.execute_sql(sql, params)
+    
+    @staticmethod
+    def read_product_historiek_by_barcode(barcode):
+        sql = """
+        SELECT * FROM Producten_Historiek ph 
+        left join Producten p 
+        on p.product_id = ph.product_id 
+        left join Product_Types pt
+        on pt.type_id = p.product_type
+        where p.barcode = %s 
+        order by ph.tijdstip desc limit 1;
+        """
+        params = [barcode]
+        return Database.get_one_row(sql, params)
 
     @staticmethod
     def read_records_product_historiek_by_productid(productid: int):
@@ -187,7 +209,7 @@ class DataRepository:
     
     @staticmethod
     def read_records_product_historiek():
-        sql = "SELECT ph.*, p.product_naam, pt.product_type from Producten_Historiek ph LEFT JOIN Producten p ON p.product_id = ph.product_id left join Product_Types pt on pt.type_id = p.product_type"
+        sql = "SELECT ph.*, p.product_naam, pt.product_type from Producten_Historiek ph LEFT JOIN Producten p ON p.product_id = ph.product_id left join Product_Types pt on pt.type_id = p.product_type order by tijdstip desc"
         return Database.get_rows(sql)
     
     @staticmethod
@@ -199,10 +221,17 @@ class DataRepository:
 
 # ****************** GEBRUIKER VOORKEUREN ******************
     @staticmethod
-    def update_voorkeur(voorkeur_id: int, gebruiker_id: int, voorkeur_beschrijving: str, voorkeur_waarde: int, voorkeur_state: bool):
-        sql = "UPDATE Gebruiker_Voorkeuren SET gebruiker_id = %s, voorkeur_beschrijving = %s, voorkeur_waarde = %s, voorkeur_state = %s = %s WHERE voorkeur_id = %s"
-        params = [gebruiker_id, voorkeur_beschrijving, voorkeur_waarde, voorkeur_state, voorkeur_id]
+    def read_voorkeur_by_description(description: str):
+        sql = "SELECT * FROM ShelfTracker.Gebruiker_Voorkeuren where voorkeur_beschrijving = %s;"
+        params = [description]
+        return Database.get_one_row(sql, params)
+
+    @staticmethod
+    def update_voorkeur(voorkeur_id: int, gebruiker_id: int, voorkeur_beschrijving: str, voorkeur_waarde):
+        sql = "UPDATE Gebruiker_Voorkeuren SET gebruiker_id = %s, voorkeur_beschrijving = %s, voorkeur_waarde = %s WHERE voorkeur_id = %s"
+        params = [gebruiker_id, voorkeur_beschrijving, voorkeur_waarde, voorkeur_id]
         return Database.execute_sql(sql, params)
+
 
 
 # ****************** GEBRUIKER MIN PRODUCT ******************
