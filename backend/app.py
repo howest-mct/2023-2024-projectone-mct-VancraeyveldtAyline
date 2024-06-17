@@ -264,12 +264,14 @@ def callback_btn_ips(pin):
     lcd.send_text("First IP:")  # Send a title to the first line
     lcd.send_instruction(0xC0)  # Move cursor to the second line
     lcd.send_text(ips[0])
+    print(ips[0])
     time.sleep(4)
     lcd.send_instruction(0x01)  # Clear display
     lcd.send_instruction(0x80)  # Move cursor to the first line
     lcd.send_text("Second IP:")  # Send a title to the first line
     lcd.send_instruction(0xC0)  # Move cursor to the second line
     lcd.send_text(ips[1])
+    print(ips[1])
     time.sleep(4)
     display_text()
 
